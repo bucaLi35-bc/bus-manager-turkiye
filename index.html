@@ -555,7 +555,7 @@ async function cloudLogout(){
  await cloudSave();await cloud.auth.signOut();cloudUser=null;cloudMode=false;$("authOverlay").classList.add("show");authMessage("Bulut hesabından çıkış yapıldı.",true)
 }
 function makeSavePayload(){
- return {version:"0.28",savedAt:Date.now(),cash,income,passengers,fleet,crewData,
+ return {version:"0.31",savedAt:Date.now(),cash,income,passengers,fleet,crewData,
  trips:trips.map(tripToSave),completedSeen,selectedTrack}
 }
 function applySavePayload(d){
@@ -580,23 +580,47 @@ async function cloudSave(){
 async function cloudBootstrap(){
  let {data,error}=await cloud.from("game_saves").select("game_data,updated_at").eq("user_id",cloudUser.id).maybeSingle();
  if(error){authMessage(error.message);return}
- if(data?.game_data){
-   let old=lastSaveAt;applySavePayload(data.game_data);
-   let saved=Number(data.game_data.savedAt||new Date(data.updated_at).getTime()||Date.now());
-   processOffline(saved,Date.now());lastSaveAt=Date.now();
+
+ let localPayload=null;
+ try{
+   let raw=localStorage.getItem(SAVE_KEY)
+    ||localStorage.getItem("busManagerTurkiye_v029")
+    ||localStorage.getItem("busManagerTurkiye_v028");
+   if(raw)localPayload=JSON.parse(raw);
+ }catch(e){console.warn("Yerel kayıt karşılaştırma hatası",e)}
+
+ let localSaved=Number(localPayload?.savedAt||lastSaveAt||0);
+ let cloudSaved=data?.game_data
+   ? Number(data.game_data.savedAt||new Date(data.updated_at).getTime()||0)
+   : 0;
+
+ if(data?.game_data && cloudSaved>localSaved){
+   applySavePayload(data.game_data);
+   processOffline(cloudSaved,Date.now());
+   lastSaveAt=Date.now();
+   try{let p=makeSavePayload(),j=JSON.stringify(p);localStorage.setItem(SAVE_KEY,j);localStorage.setItem(BACKUP_KEY,j)}catch(e){console.warn(e)}
+ }else if(localPayload && Array.isArray(localPayload.trips)){
+   // Yerel kayıt eşit veya daha yeniyse önce onu tekrar uygula; boş RAM durumu buluta gidemez.
+   applySavePayload(localPayload);
+   lastSaveAt=localSaved||Date.now();
+   await cloudSave();
+ }else if(data?.game_data){
+   applySavePayload(data.game_data);
  }else{
-   // First cloud login: migrate current local game into cloud.
-   await cloudSave()
+   // İki tarafta da kayıt yoksa ancak o zaman yeni boş oyun kaydı oluştur.
+   await cloudSave();
  }
- refreshBusSelect();drawFleet();draw();renderTracker();renderTripsCenter();saveGame();
- if($("saveState"))$("saveState").textContent="☁ Bulut senkronizasyonu aktif";
+
+ refreshBusSelect();drawFleet();draw();renderTracker();renderTripsCenter();
+ if($("saveState"))$("saveState").textContent="☁ Yerel + bulut kayıt senkronize";
 }
 async function initCloudAuth(){
  let {data}=await cloud.auth.getSession();
  if(data.session?.user){cloudUser=data.session.user;cloudMode=true;await cloudBootstrap()}
  else $("authOverlay").classList.add("show");
 }
-const SAVE_KEY="busManagerTurkiye_v028";
+const SAVE_KEY="busManagerTurkiye_v031";
+const BACKUP_KEY="busManagerTurkiye_stable_backup";
 
 let lastSaveAt=Date.now(),completedSeen={};
 
@@ -605,30 +629,31 @@ function tripToSave(t){
 }
 function saveGame(){
  try{
-  localStorage.setItem(SAVE_KEY,JSON.stringify(makeSavePayload()));lastSaveAt=Date.now();
+  let payload=makeSavePayload(),json=JSON.stringify(payload);localStorage.setItem(SAVE_KEY,json);localStorage.setItem(BACKUP_KEY,json);lastSaveAt=payload.savedAt;
   if(cloudMode&&Date.now()-cloudLastSync>2500)cloudSave()
  }catch(e){console.warn("Kayıt yapılamadı",e)}
 }
 function loadGame(){
  try{
-  let raw=localStorage.getItem(SAVE_KEY)
- ||localStorage.getItem("busManagerTurkiye_v027")
- ||localStorage.getItem("busManagerTurkiye_v026")
- ||localStorage.getItem("busManagerTurkiye_v025")
- ||localStorage.getItem("busManagerTurkiye_v024")
- ||localStorage.getItem("busManagerTurkiye_v023")
- ||localStorage.getItem("busManagerTurkiye_v022")
- ||localStorage.getItem("busManagerTurkiye_v021")
- ||localStorage.getItem("busManagerTurkiye_v020")
- ||localStorage.getItem("busManagerTurkiye_v019")
- ||localStorage.getItem("busManagerTurkiye_v011");if(!raw)return false;
-  let d=JSON.parse(raw);if(!d||!d.trips)return false;
-  cash=Number(d.cash??cash);income=Number(d.income??0);passengers=Number(d.passengers??0);
-  if(Array.isArray(d.fleet))fleet=d.fleet;
-  if(d.crewData)Object.assign(crewData,d.crewData);
-  trips=d.trips.map(t=>syncTicketTruth({...t,dep:new Date(t.dep),end:new Date(t.end),tickets:Array.isArray(t.tickets)?t.tickets:[]}));
-  completedSeen=d.completedSeen||{};selectedTrack=Math.min(d.selectedTrack||0,Math.max(0,trips.length-1));
-  lastSaveAt=d.savedAt||Date.now();
+  let keys=[SAVE_KEY,BACKUP_KEY,"busManagerTurkiye_v030","busManagerTurkiye_v029","busManagerTurkiye_v028","busManagerTurkiye_v027","busManagerTurkiye_v026","busManagerTurkiye_v025","busManagerTurkiye_v024","busManagerTurkiye_v023","busManagerTurkiye_v022","busManagerTurkiye_v021","busManagerTurkiye_v020","busManagerTurkiye_v019","busManagerTurkiye_v011"];
+  let best=null,bestKey="";
+  keys.forEach(k=>{
+   try{
+    let raw=localStorage.getItem(k);if(!raw)return;
+    let d=JSON.parse(raw);
+    if(!d||!Array.isArray(d.trips))return;
+    let ts=Number(d.savedAt||0);
+    if(!best||ts>Number(best.savedAt||0)){best=d;bestKey=k}
+   }catch(e){}
+  });
+  if(!best)return false;
+  cash=Number(best.cash??cash);income=Number(best.income??0);passengers=Number(best.passengers??0);
+  if(Array.isArray(best.fleet))fleet=best.fleet;
+  if(best.crewData)Object.assign(crewData,best.crewData);
+  trips=best.trips.map(t=>syncTicketTruth({...t,dep:new Date(t.dep),end:new Date(t.end),tickets:Array.isArray(t.tickets)?t.tickets:[]}));
+  completedSeen=best.completedSeen||{};selectedTrack=Math.min(best.selectedTrack||0,Math.max(0,trips.length-1));
+  lastSaveAt=Number(best.savedAt||Date.now());
+  window.__loadedSaveKey=bestKey;
   processOffline(lastSaveAt,Date.now());
   return true
  }catch(e){console.warn("Kayıt okunamadı",e);return false}
@@ -891,6 +916,11 @@ function plannedTripCard(t,i,now){
   return `<div class="tcCard"><b>${name}</b><div class="mut">Kalkış: ${dt}</div><div class="bad">Sefer kaydı okunamadı. Tarayıcı konsolunda ayrıntı kaydedildi.</div></div>`;
  }
 }
+function localSaveDiagnostics(){
+ let rows=[],keys=[SAVE_KEY,BACKUP_KEY,"busManagerTurkiye_v030","busManagerTurkiye_v029","busManagerTurkiye_v028"];
+ keys.forEach(k=>{try{let raw=localStorage.getItem(k);if(!raw)return;let d=JSON.parse(raw);rows.push(`${k}: ${Array.isArray(d.trips)?d.trips.length:"?"} sefer • ${d.savedAt?new Date(d.savedAt).toLocaleTimeString("tr-TR"):"?"}`)}catch(e){rows.push(`${k}: OKUNAMADI`)}}); 
+ return rows.join("<br>")||"Yerel kayıt bulunamadı";
+}
 function renderTripsCenter(){
  if(!$("tripsCenter")||!$("tripsCenter").classList.contains("show"))return;
  let now=new Date(),live=[],plan=[],done=[];
@@ -906,7 +936,7 @@ function renderTripsCenter(){
    if(tripsTab==="plan")return plannedTripCard(t,i,now);
    try{return tripCenterCard(t,i,now)}catch(e){console.error("Sefer kartı hatası",e,t);return `<div class="tcCard"><b>${t.r?.name||"Sefer"}</b><div class="bad">Detay kartı yüklenemedi.</div></div>`}
  }).join(""):`<div class="tcEmpty">${tripsTab==="live"?"Şu anda devam eden sefer yok.":tripsTab==="plan"?"Planlanmış sefer bulunmuyor.":"Henüz tamamlanmış sefer bulunmuyor."}</div>`;
- $("tcContent").innerHTML=html;
+ $("tcContent").innerHTML=`<div style="margin-bottom:10px;padding:8px 10px;border:1px dashed #315064;border-radius:8px;font-size:11px;color:#8fc9ec"><b>Kayıt Teşhis:</b> RAM ${trips.length} sefer • Yüklenen: ${window.__loadedSaveKey||"oturum"}<br>${localSaveDiagnostics()}</div>`+html;
 }
 
 
@@ -928,7 +958,11 @@ function openTracker(){
 }
 function closeTracker(){document.querySelector(".app").classList.remove("trackHidden");$("tracker").classList.remove("show")}
 function chooseTrack(i){selectedTrack=i;renderTracker()}
-function statusFor(t,now){return now<t.dep?"Kalkışa Hazırlanıyor":now>=t.end?"Tamamlandı":"Seferde"}
+function statusFor(t,now){
+ let dep=t.dep instanceof Date?t.dep:new Date(t.dep),end=t.end instanceof Date?t.end:new Date(t.end);
+ if(isNaN(dep.getTime())||isNaN(end.getTime()))return "Kayıt Hatası";
+ return now<dep?"Kalkışa Hazırlanıyor":now>=end?"Tamamlandı":"Seferde"
+}
 function currentStopIndex(t,now){
  let idx=0;t.ss.forEach((x,i)=>{if(whenFor(t,x)<=now)idx=i});return now<t.dep?0:idx
 }
@@ -971,4 +1005,8 @@ setTimeout(showOfflineSummary,250);setTimeout(initCloudAuth,100);
 setInterval(()=>{$("realClock").innerHTML=new Date().toLocaleDateString("tr-TR",{dateStyle:"long"})+"<br><b style='font-size:22px;color:white'>"+new Date().toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"})+"</b>";draw();renderTracker();renderTripsCenter();
  if(Date.now()-lastSaveAt>10000){saveGame();if($("saveState"))$("saveState").textContent="● Kaydedildi"}
 },1000);
+
+window.addEventListener("pagehide",()=>{
+ try{let p=makeSavePayload(),j=JSON.stringify(p);localStorage.setItem(SAVE_KEY,j);localStorage.setItem(BACKUP_KEY,j)}catch(e){console.warn("Kapanış kaydı",e)}
+});
 </script></body></html>
