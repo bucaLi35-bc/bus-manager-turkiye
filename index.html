@@ -320,45 +320,93 @@ function seedSales(t){
  t.rev=0;
  t.total=0;
 }
+
+function tripPassengerStops(t){
+ return (Array.isArray(t.ss)?t.ss:t.r.st).filter(x=>x&&x[3]!=="rest");
+}
+function seatFreeForOD(t,seat,from,to){
+ let stops=tripPassengerStops(t),a=stops.findIndex(x=>x[1]===from),b=stops.findIndex(x=>x[1]===to);
+ if(a<0||b<=a)return false;
+ return !validTickets(t).some(k=>{
+   if(Number(k.seat)!==Number(seat))return false;
+   let ka=stops.findIndex(x=>x[1]===k.from),kb=stops.findIndex(x=>x[1]===k.to);
+   return ka>=0&&kb>ka && Math.max(a,ka)<Math.min(b,kb);
+ });
+}
+function createDynamicTicket(t,from,tickTime,seed){
+ let stops=tripPassengerStops(t),a=stops.findIndex(x=>x[1]===from);
+ if(a<0)return false;
+ let destinations=stops.slice(a+1).filter(x=>{
+   let key=from+"|"+x[1];
+   return can(t.r,from,x[1]) && (t.customFares?.[key]??STEP2_FARES[key])!=null;
+ });
+ if(!destinations.length)return false;
+
+ // Deterministic destination selection, weighted slightly toward longer trips.
+ let weighted=[];
+ destinations.forEach((d,i)=>{for(let w=0;w<Math.max(1,i+1);w++)weighted.push(d)});
+ let pick=Math.abs(Math.sin(seed*4.123+17.71))*100000;
+ let dest=weighted[Math.floor(pick)%weighted.length][1];
+
+ let free=[];
+ for(let seat=1;seat<=Number(t.cap||0);seat++)if(seatFreeForOD(t,seat,from,dest))free.push(seat);
+ if(!free.length)return false;
+ let seat=free[Math.floor(Math.abs(Math.sin(seed*7.77))*100000)%free.length];
+
+ let key=from+"|"+dest;
+ let base=Number(t.customFares?.[key]??STEP2_FARES[key]??0);
+ let discount=Number(t.discounts?.[from]||0);
+ let price=Math.round(base*(1-discount/100));
+ if(price<=0)return false;
+
+ t.tickets=Array.isArray(t.tickets)?t.tickets:[];
+ t.tickets.push({
+   id:"T"+Math.round(tickTime.getTime())+"-"+seat+"-"+t.tickets.length,
+   from,to:dest,seat,price,
+   soldAt:tickTime.toISOString(),
+   status:"sold"
+ });
+ syncTicketTruth(t);
+ return true;
+}
+
 function updateDynamicSales(t,now){
- if(!t.salesByOrigin)return;
+ t.tickets=Array.isArray(t.tickets)?t.tickets:[];
+ syncTicketTruth(t);
  let last=Number(t.lastSalesUpdate||now.getTime());
  let elapsed=Math.max(0,(now.getTime()-last)/60000);
  if(elapsed<0.5)return;
 
  let stops=boardingStopsFor(t.r);
- let wholeMinutes=Math.min(720,Math.floor(elapsed)); // offline catch-up, max 12h per pass
- let seedBase=Math.floor(last/60000);
+ let wholeMinutes=Math.min(720,Math.floor(elapsed));
+ let seedBase=Math.floor(last/60000),changed=false;
 
  for(let minute=1;minute<=wholeMinutes;minute++){
   let tickTime=new Date(last+minute*60000);
   stops.forEach((st,i)=>{
    let stopTime=whenFor(t,st);
-   if(tickTime>=stopTime)return; // that boarding stop has closed
+   if(tickTime>=stopTime)return;
    let name=st[1],sold=Number(t.salesByOrigin[name]||0),q=Number(t.quota[name]||0);
    if(sold>=q||q<=0)return;
 
    let minsTo=Math.max(1,(stopTime-tickTime)/60000);
-   // Sales start slowly and accelerate toward the stop's departure.
-   let baseChance=minsTo>720?.004:minsTo>360?.008:minsTo>180?.015:minsTo>60?.028:.05;
+   // Gerçekçi akış: uzak zamanda yavaş, kalkış yaklaştıkça hızlanan talep.
+   let baseChance=minsTo>720?.006:minsTo>360?.012:minsTo>180?.022:minsTo>60?.040:.065;
    let routeDemand=t.r.name.includes("Hat 3")?1.18:t.r.name.includes("Hat 2")?1.08:1.0;
    let discountBoost=t.discounts?.[name]?1.18:1;
-   let chance=Math.min(.16,baseChance*routeDemand*discountBoost);
+   let chance=Math.min(.18,baseChance*routeDemand*discountBoost);
 
-   // deterministic pseudo-random per trip/minute/stop, so reopen/catch-up is stable
-   let tripSeed=(new Date(t.dep).getTime()/60000)|0;
-   let x=Math.abs(Math.sin((seedBase+minute)*12.9898+(i+1)*78.233+tripSeed*.013))*43758.5453;
-   let pseudo=x-Math.floor(x);
+   let tripSeed=Math.floor(new Date(t.dep).getTime()/60000);
+   let seed=(seedBase+minute)*12.9898+(i+1)*78.233+tripSeed*.013;
+   let x=Math.abs(Math.sin(seed))*43758.5453,pseudo=x-Math.floor(x);
    if(pseudo<chance){
-     t.salesByOrigin[name]=sold+1;
+     if(createDynamicTicket(t,name,tickTime,seed))changed=true;
    }
   });
  }
- t.sold=Object.values(t.salesByOrigin).reduce((a,b)=>a+(Number(b)||0),0);
- t.total=t.sold;
- // No synthetic revenue: revenue stays tied to real ticket records.
- t.rev=ticketRevenue(t);
+ syncTicketTruth(t);
  t.lastSalesUpdate=last+wholeMinutes*60000;
+ if(changed)saveGame();
 }
 function quotaSuggestions(t,now){
  let arr=[],stops=boardingStopsFor(t.r);
@@ -590,7 +638,7 @@ function syncTicketTruth(t){
 }
 
 function makeSavePayload(){
- return {version:"0.33",savedAt:Date.now(),cash,income,passengers,fleet,crewData,
+ return {version:"0.34",savedAt:Date.now(),cash,income,passengers,fleet,crewData,
  trips:trips.map(tripToSave),completedSeen,selectedTrack}
 }
 function applySavePayload(d){
@@ -654,7 +702,7 @@ async function initCloudAuth(){
  if(data.session?.user){cloudUser=data.session.user;cloudMode=true;await cloudBootstrap()}
  else $("authOverlay").classList.add("show");
 }
-const SAVE_KEY="busManagerTurkiye_v033";
+const SAVE_KEY="busManagerTurkiye_v034";
 const BACKUP_KEY="busManagerTurkiye_stable_backup";
 
 let lastSaveAt=Date.now(),completedSeen={};
@@ -691,7 +739,7 @@ function saveGame(){
 }
 function loadGame(){
  try{
-  let keys=[SAVE_KEY,BACKUP_KEY,"busManagerTurkiye_v032","busManagerTurkiye_v031","busManagerTurkiye_v030","busManagerTurkiye_v029","busManagerTurkiye_v028","busManagerTurkiye_v027","busManagerTurkiye_v026","busManagerTurkiye_v025","busManagerTurkiye_v024","busManagerTurkiye_v023","busManagerTurkiye_v022","busManagerTurkiye_v021","busManagerTurkiye_v020","busManagerTurkiye_v019","busManagerTurkiye_v011"];
+  let keys=[SAVE_KEY,BACKUP_KEY,"busManagerTurkiye_v033","busManagerTurkiye_v032","busManagerTurkiye_v031","busManagerTurkiye_v030","busManagerTurkiye_v029","busManagerTurkiye_v028","busManagerTurkiye_v027","busManagerTurkiye_v026","busManagerTurkiye_v025","busManagerTurkiye_v024","busManagerTurkiye_v023","busManagerTurkiye_v022","busManagerTurkiye_v021","busManagerTurkiye_v020","busManagerTurkiye_v019","busManagerTurkiye_v011"];
   let best=null,bestKey="";
   keys.forEach(k=>{
    try{
@@ -715,20 +763,14 @@ function loadGame(){
  }catch(e){console.warn("Kayıt okunamadı",e);return false}
 }
 function simulateOfflineSales(t,fromMs,toMs){
- if(!t.salesByOrigin||!t.quota)return;
- let from=new Date(fromMs),to=new Date(toMs),stops=boardingStopsFor(t.r);
- stops.forEach((st,i)=>{
-   let close=whenFor(t,st),until=new Date(Math.min(to.getTime(),close.getTime()));
-   if(until<=from)return;
-   let minutes=(until-from)/60000,q=t.quota[st[1]]||0,s=t.salesByOrigin[st[1]]||0,free=Math.max(0,q-s);
-   if(!free)return;
-   let demand=(t.r.name.includes("Hat 3")?1.22:t.r.name.includes("Hat 2")?1.10:1)*(1+i*.06);
-   let expected=Math.floor(minutes/35*demand);
-   let add=Math.min(free,Math.max(0,expected));
-   t.salesByOrigin[st[1]]=s+add
- });
- t.sold=Object.values(t.salesByOrigin).reduce((a,b)=>a+b,0);
- t.lastSalesUpdate=toMs
+ if(!t.quota)return;
+ let cursor=Math.max(Number(fromMs||0),Number(t.lastSalesUpdate||fromMs||0));
+ let end=Number(toMs||Date.now());
+ // Reuse the exact same real-ticket engine for offline elapsed time.
+ if(end>cursor){
+   t.lastSalesUpdate=cursor;
+   updateDynamicSales(t,new Date(end));
+ }
 }
 function processOffline(fromMs,toMs){
  if(toMs<=fromMs)return;
