@@ -561,8 +561,36 @@ function continueLocal(){cloudMode=false;$("authOverlay").classList.remove("show
 async function cloudLogout(){
  await cloudSave();await cloud.auth.signOut();cloudUser=null;cloudMode=false;$("authOverlay").classList.add("show");authMessage("Bulut hesabından çıkış yapıldı.",true)
 }
+
+function validTickets(t){
+ return Array.isArray(t?.tickets)
+   ? t.tickets.filter(x=>x && x.status!=="cancelled")
+   : [];
+}
+function totalTicketsSold(t){
+ return validTickets(t).length;
+}
+function ticketRevenue(t){
+ return validTickets(t).reduce((sum,x)=>sum+(Number(x.price)||0),0);
+}
+function syncTicketTruth(t){
+ if(!t||typeof t!=="object")return t;
+ t.tickets=Array.isArray(t.tickets)?t.tickets:[];
+ // Finans ve toplam satışın tek kaynağı gerçek ticket kayıtlarıdır.
+ t.sold=totalTicketsSold(t);
+ t.total=t.sold;
+ t.rev=ticketRevenue(t);
+ t.salesByOrigin={};
+ t.soldByDest={};
+ validTickets(t).forEach(x=>{
+   if(x.from)t.salesByOrigin[x.from]=(t.salesByOrigin[x.from]||0)+1;
+   if(x.to)t.soldByDest[x.to]=(t.soldByDest[x.to]||0)+1;
+ });
+ return t;
+}
+
 function makeSavePayload(){
- return {version:"0.32",savedAt:Date.now(),cash,income,passengers,fleet,crewData,
+ return {version:"0.33",savedAt:Date.now(),cash,income,passengers,fleet,crewData,
  trips:trips.map(tripToSave),completedSeen,selectedTrack}
 }
 function applySavePayload(d){
@@ -626,7 +654,7 @@ async function initCloudAuth(){
  if(data.session?.user){cloudUser=data.session.user;cloudMode=true;await cloudBootstrap()}
  else $("authOverlay").classList.add("show");
 }
-const SAVE_KEY="busManagerTurkiye_v032";
+const SAVE_KEY="busManagerTurkiye_v033";
 const BACKUP_KEY="busManagerTurkiye_stable_backup";
 
 let lastSaveAt=Date.now(),completedSeen={};
@@ -663,7 +691,7 @@ function saveGame(){
 }
 function loadGame(){
  try{
-  let keys=[SAVE_KEY,BACKUP_KEY,"busManagerTurkiye_v031","busManagerTurkiye_v030","busManagerTurkiye_v029","busManagerTurkiye_v028","busManagerTurkiye_v027","busManagerTurkiye_v026","busManagerTurkiye_v025","busManagerTurkiye_v024","busManagerTurkiye_v023","busManagerTurkiye_v022","busManagerTurkiye_v021","busManagerTurkiye_v020","busManagerTurkiye_v019","busManagerTurkiye_v011"];
+  let keys=[SAVE_KEY,BACKUP_KEY,"busManagerTurkiye_v032","busManagerTurkiye_v031","busManagerTurkiye_v030","busManagerTurkiye_v029","busManagerTurkiye_v028","busManagerTurkiye_v027","busManagerTurkiye_v026","busManagerTurkiye_v025","busManagerTurkiye_v024","busManagerTurkiye_v023","busManagerTurkiye_v022","busManagerTurkiye_v021","busManagerTurkiye_v020","busManagerTurkiye_v019","busManagerTurkiye_v011"];
   let best=null,bestKey="";
   keys.forEach(k=>{
    try{
@@ -947,7 +975,9 @@ function plannedTripCard(t,i,now){
 function localSaveDiagnostics(){
  let rows=[],keys=[SAVE_KEY,BACKUP_KEY,"busManagerTurkiye_v030","busManagerTurkiye_v029","busManagerTurkiye_v028"];
  keys.forEach(k=>{try{let raw=localStorage.getItem(k);if(!raw)return;let d=JSON.parse(raw);rows.push(`${k}: ${Array.isArray(d.trips)?d.trips.length:"?"} sefer • ${d.savedAt?new Date(d.savedAt).toLocaleTimeString("tr-TR"):"?"}`)}catch(e){rows.push(`${k}: OKUNAMADI`)}}); 
- return (rows.join("<br>")||"Yerel kayıt bulunamadı")+(window.__lastSaveError?`<br><b style="color:#ff6677">Son kayıt hatası: ${window.__lastSaveError}</b>`:"");
+ return (rows.join("<br>")||"Yerel kayıt bulunamadı")
+ +(window.__lastLoadError?`<br><b style="color:#ff6677">Yükleme hatası: ${window.__lastLoadError}</b>`:"")
+ +(window.__lastSaveError?`<br><b style="color:#ff6677">Kayıt hatası: ${window.__lastSaveError}</b>`:"");
 }
 function renderTripsCenter(){
  if(!$("tripsCenter")||!$("tripsCenter").classList.contains("show"))return;
