@@ -491,7 +491,14 @@ function createTrip(){
 nt.events=[]; seedSales(nt);
  nt.busCondition={engine:91,tires:82}; nt.delay=0;
  nt.soldByDest={};
- income=trips.reduce((a,x)=>a+ticketRevenue(x),0);passengers=trips.reduce((a,x)=>a+totalTicketsSold(x),0);closeTrip();draw();selectedTrack=trips.length-1;saveGame();openTracker()
+ income=trips.reduce((a,x)=>a+ticketRevenue(x),0);passengers=trips.reduce((a,x)=>a+totalTicketsSold(x),0);selectedTrack=trips.length-1;
+ let persisted=saveGame();
+ draw();
+ if(!persisted){
+   alert("Sefer oluşturuldu fakat kayıt diske yazılamadı. Sefer silinmedi; lütfen Kayıt Teşhis bilgisini kontrol edin.");
+ }
+ closeTrip();
+ openTracker()
 }
 function draw(){
  income=trips.reduce((a,x)=>a+ticketRevenue(x),0);passengers=trips.reduce((a,x)=>a+totalTicketsSold(x),0);
@@ -555,7 +562,7 @@ async function cloudLogout(){
  await cloudSave();await cloud.auth.signOut();cloudUser=null;cloudMode=false;$("authOverlay").classList.add("show");authMessage("Bulut hesabından çıkış yapıldı.",true)
 }
 function makeSavePayload(){
- return {version:"0.31",savedAt:Date.now(),cash,income,passengers,fleet,crewData,
+ return {version:"0.32",savedAt:Date.now(),cash,income,passengers,fleet,crewData,
  trips:trips.map(tripToSave),completedSeen,selectedTrack}
 }
 function applySavePayload(d){
@@ -619,23 +626,44 @@ async function initCloudAuth(){
  if(data.session?.user){cloudUser=data.session.user;cloudMode=true;await cloudBootstrap()}
  else $("authOverlay").classList.add("show");
 }
-const SAVE_KEY="busManagerTurkiye_v031";
+const SAVE_KEY="busManagerTurkiye_v032";
 const BACKUP_KEY="busManagerTurkiye_stable_backup";
 
 let lastSaveAt=Date.now(),completedSeen={};
 
 function tripToSave(t){
- let z={...t}; z.dep=t.dep.toISOString();z.end=t.end.toISOString();return z
+ let z={...t};
+ let dep=t.dep instanceof Date?t.dep:new Date(t.dep);
+ let end=t.end instanceof Date?t.end:new Date(t.end);
+ z.dep=!isNaN(dep.getTime())?dep.toISOString():String(t.dep||"");
+ z.end=!isNaN(end.getTime())?end.toISOString():String(t.end||"");
+ // route data is plain JSON data; tickets/quota copied explicitly for persistence safety
+ z.tickets=Array.isArray(t.tickets)?t.tickets.map(x=>({...x})):[];
+ z.quota=t.quota&&typeof t.quota==="object"?{...t.quota}:{};
+ z.salesByOrigin=t.salesByOrigin&&typeof t.salesByOrigin==="object"?{...t.salesByOrigin}:{};
+ return z
 }
 function saveGame(){
  try{
-  let payload=makeSavePayload(),json=JSON.stringify(payload);localStorage.setItem(SAVE_KEY,json);localStorage.setItem(BACKUP_KEY,json);lastSaveAt=payload.savedAt;
-  if(cloudMode&&Date.now()-cloudLastSync>2500)cloudSave()
- }catch(e){console.warn("Kayıt yapılamadı",e)}
+  let payload=makeSavePayload();
+  let json=JSON.stringify(payload);
+  localStorage.setItem(SAVE_KEY,json);
+  localStorage.setItem(BACKUP_KEY,json);
+  lastSaveAt=payload.savedAt;
+  window.__lastSaveError="";
+  if($("saveState"))$("saveState").textContent=`💾 Yerel kayıt: ${payload.trips.length} sefer`;
+  if(cloudMode)cloudSave();
+  return true
+ }catch(e){
+  window.__lastSaveError=String(e?.message||e);
+  console.error("Kayıt yapılamadı",e);
+  if($("saveState"))$("saveState").textContent="⚠ Kayıt başarısız: "+window.__lastSaveError;
+  return false
+ }
 }
 function loadGame(){
  try{
-  let keys=[SAVE_KEY,BACKUP_KEY,"busManagerTurkiye_v030","busManagerTurkiye_v029","busManagerTurkiye_v028","busManagerTurkiye_v027","busManagerTurkiye_v026","busManagerTurkiye_v025","busManagerTurkiye_v024","busManagerTurkiye_v023","busManagerTurkiye_v022","busManagerTurkiye_v021","busManagerTurkiye_v020","busManagerTurkiye_v019","busManagerTurkiye_v011"];
+  let keys=[SAVE_KEY,BACKUP_KEY,"busManagerTurkiye_v031","busManagerTurkiye_v030","busManagerTurkiye_v029","busManagerTurkiye_v028","busManagerTurkiye_v027","busManagerTurkiye_v026","busManagerTurkiye_v025","busManagerTurkiye_v024","busManagerTurkiye_v023","busManagerTurkiye_v022","busManagerTurkiye_v021","busManagerTurkiye_v020","busManagerTurkiye_v019","busManagerTurkiye_v011"];
   let best=null,bestKey="";
   keys.forEach(k=>{
    try{
@@ -919,7 +947,7 @@ function plannedTripCard(t,i,now){
 function localSaveDiagnostics(){
  let rows=[],keys=[SAVE_KEY,BACKUP_KEY,"busManagerTurkiye_v030","busManagerTurkiye_v029","busManagerTurkiye_v028"];
  keys.forEach(k=>{try{let raw=localStorage.getItem(k);if(!raw)return;let d=JSON.parse(raw);rows.push(`${k}: ${Array.isArray(d.trips)?d.trips.length:"?"} sefer • ${d.savedAt?new Date(d.savedAt).toLocaleTimeString("tr-TR"):"?"}`)}catch(e){rows.push(`${k}: OKUNAMADI`)}}); 
- return rows.join("<br>")||"Yerel kayıt bulunamadı";
+ return (rows.join("<br>")||"Yerel kayıt bulunamadı")+(window.__lastSaveError?`<br><b style="color:#ff6677">Son kayıt hatası: ${window.__lastSaveError}</b>`:"");
 }
 function renderTripsCenter(){
  if(!$("tripsCenter")||!$("tripsCenter").classList.contains("show"))return;
