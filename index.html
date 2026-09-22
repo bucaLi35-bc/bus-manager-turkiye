@@ -71,6 +71,7 @@ input[type="date"],#tripHour,#tripMinute{cursor:pointer}
 .quotaBox,.fareBox{background:#0c1a24;border:1px solid #294151;border-radius:10px;padding:11px}.quotaBox input,.fareBox input{width:100%;box-sizing:border-box;margin-top:6px;background:#07131b;border:1px solid #365265;color:#fff;border-radius:7px;padding:8px}
 .fareGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.fareBox small{color:#82a0b1}.planSummary{background:#0b2021;border:1px solid #247254;border-radius:10px;padding:12px;margin:12px 0}
 @media(max-width:850px){.quotaGrid,.fareGrid{grid-template-columns:1fr 1fr}}@media(max-width:550px){.quotaGrid,.fareGrid{grid-template-columns:1fr}}
+.repeatBtn{border:1px solid #33414d;background:#1b2025;color:#fff;padding:8px 10px;border-radius:5px;font-weight:700;cursor:pointer}.repeatBtn.active{background:#0c8b4a;border-color:#19b86b}.repeatBtn:hover{border-color:#4e7188}
 </style></head><body>
 <div id="authOverlay" class="authOverlay">
  <div class="authCard">
@@ -185,6 +186,22 @@ input[type="date"],#tripHour,#tripMinute{cursor:pointer}
 <div><label>Sefer saati</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><select id="tripHour" aria-label="Saat"></select><select id="tripMinute" aria-label="Dakika"></select></div></div>
 </div>
 <div class="row"><div><label>Bilet fiyat seviyesi</label><select id="price"><option value=".9">Ekonomik ×0,90</option><option value="1" selected>Standart ×1,00</option><option value="1.15">Premium ×1,15</option></select></div><div><label>Seçilen kalkış</label><input id="departurePreview" type="text" readonly></div></div>
+<div class="panel" style="margin-top:12px;padding:12px">
+ <label>SEFER TİPİ</label>
+ <div id="repeatButtons" style="display:flex;gap:7px;flex-wrap:wrap;margin:7px 0 13px">
+  <button type="button" class="repeatBtn active" data-repeat="1" onclick="setRepeatMode(1,this)">Tek Sefer</button>
+  <button type="button" class="repeatBtn" data-repeat="5" onclick="setRepeatMode(5,this)">5 Gün Tekrarla</button>
+  <button type="button" class="repeatBtn" data-repeat="7" onclick="setRepeatMode(7,this)">7 Gün Tekrarla</button>
+  <button type="button" class="repeatBtn" data-repeat="30" onclick="setRepeatMode(30,this)">30 Gün Tekrarla</button>
+  <button type="button" class="repeatBtn" data-repeat="0" onclick="setRepeatMode(0,this)">Günlük (Süresiz)</button>
+ </div>
+ <label>OTOMATİK DÖNÜŞ</label>
+ <label style="display:flex;align-items:center;gap:9px;margin-top:7px;padding:10px;border:1px solid #33414d;border-radius:7px;background:#141b21">
+   <input id="autoReturn" type="checkbox" style="width:auto">
+   <span><b>Otomatik dönüş planı oluştur</b><br><small class="mut">Varıştan 60 dk sonra araç hazırlanır ve aynı hat numarasıyla ters yönde sefere çıkar.</small></span>
+ </label>
+ <div id="repeatInfo" class="mut" style="margin-top:8px">Bu sefer yalnızca bir kez çalışır.</div>
+</div>
 <div id="warning" class="mut"></div><h3>Sefer Personeli <span class="mut" style="font-size:12px">(2 kaptan + 1 kabin memuru zorunlu)</span></h3><div class="row"><div><label>1. Kaptan</label><select id="captain1"><option value="">Seçiniz</option><option>Ahmet Yılmaz</option><option>Mehmet Kaya</option><option>Ali Çetin</option><option>Burak Demir</option></select></div><div><label>2. Kaptan</label><select id="captain2"><option value="">Seçiniz</option><option>Ahmet Yılmaz</option><option>Mehmet Kaya</option><option>Ali Çetin</option><option>Burak Demir</option></select></div></div><div class="row"><div><label>Kabin Memuru</label><select id="cabin"><option value="">Seçiniz</option><option>Ayşe Demir</option><option>Elif Kaya</option></select></div><div><label>Personel Etkisi</label><input id="crewEffect" readonly value="Personel seçimi bekleniyor"></div></div><h3>Otogar / Durak Seçimi</h3><div id="stops" class="stops"></div>
 <div class="row"><div class="metric"><small>OTOGAR MALİYETİ</small><b id="fee">0 ₺</b></div><div class="metric"><small>TALEP</small><b id="demand">—</b></div></div>
 <div class="actions"><button class="primary secondary" onclick="closeTrip()">İptal</button><button class="primary" id="create" type="button" onclick="openQuotaFareStep()">Kontenjan ve Bilet Fiyatlarını Düzenle →</button></div>
@@ -235,7 +252,7 @@ let fleet=[
 {uid:"BUS-001",model:"Temsa Safir Plus",fuel:22,layout:"2+2",cap:50,comfort:1.00,purchase:12000000},
 {uid:"BUS-002",model:"Temsa Maraton",fuel:23,layout:"2+1",cap:41,comfort:1.07,purchase:17000000}
 ];
-const crewData={"Ahmet Yılmaz":{fatigue:22,days:4},"Mehmet Kaya":{fatigue:68,days:6},"Ali Çetin":{fatigue:41,days:2},"Burak Demir":{fatigue:15,days:1},"Ayşe Demir":{fatigue:31,days:3},"Elif Kaya":{fatigue:57,days:5}};let trips=[],income=0,passengers=0,selectedTrack=0;const $=x=>document.getElementById(x),money=x=>Math.round(x).toLocaleString("tr-TR")+" ₺";
+const crewData={"Ahmet Yılmaz":{fatigue:22,days:4},"Mehmet Kaya":{fatigue:68,days:6},"Ali Çetin":{fatigue:41,days:2},"Burak Demir":{fatigue:15,days:1},"Ayşe Demir":{fatigue:31,days:3},"Elif Kaya":{fatigue:57,days:5}};let trips=[],recurringPlans=[],income=0,passengers=0,selectedTrack=0;const $=x=>document.getElementById(x),money=x=>Math.round(x).toLocaleString("tr-TR")+" ₺";
 routes.forEach((r,i)=>$("route").add(new Option(r.name,i)));
 function mins(t){let a=t.split(":").map(Number);return a[0]*60+a[1]}function pad(n){return String(n).padStart(2,"0")}
 function localVal(d){return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`}
@@ -265,7 +282,7 @@ function buyBus(id){
  drawMarket();drawFleet();refreshBusSelect();draw();saveGame()
 }
 function busBusy(uid,dep,end){
- return trips.some(t=>t.busUid==uid && dep<t.end && end>t.dep)
+ return !!busConflictInfo(uid,dep,end)
 }
 function refreshBusSelect(){
  let old=$("bus").value;$("bus").innerHTML="";
@@ -436,8 +453,107 @@ function increaseQuota(stop){
  let donor=donors.find(x=>(t.quota[x]||0)-(t.salesByOrigin[x]||0)>0);
  if(donor){t.quota[donor]--;t.quota[stop]=(t.quota[stop]||0)+1}saveGame();renderTracker()
 }
+
+let repeatMode=1;
+function setRepeatMode(n,btn){
+ repeatMode=Number(n);
+ document.querySelectorAll(".repeatBtn").forEach(x=>x.classList.toggle("active",x===btn));
+ let txt=repeatMode===1?"Bu sefer yalnızca bir kez çalışır."
+   :repeatMode===0?"Araç bu seferi her gün aynı saatte süresiz tekrarlar. Sistem gelecekteki seferleri otomatik oluşturur."
+   :`Araç bu seferi ${repeatMode} gün boyunca her gün aynı saatte tekrarlar.`;
+ if($("repeatInfo"))$("repeatInfo").textContent=txt;
+}
+function reverseRouteOf(r){
+ let no=routeNo(r),dir=r.dir==="IZ-IST"?"IST-IZ":"IZ-IST";
+ return routes.find(x=>x.dir===dir&&routeNo(x)===no)||null;
+}
+function busReadyAt(uid,ignoreTrip=null){
+ let latest=null;
+ trips.forEach(t=>{
+   if(t===ignoreTrip||t.busUid!==uid)return;
+   let e=t.end instanceof Date?t.end:new Date(t.end);
+   if(!isNaN(e)&&(!latest||e>latest))latest=e;
+ });
+ return latest?new Date(latest.getTime()+60*60000):null;
+}
+function busConflictInfo(uid,dep,end,ignoreTrip=null){
+ let hit=null;
+ trips.forEach(t=>{
+   if(hit||t===ignoreTrip||t.busUid!==uid)return;
+   let td=t.dep instanceof Date?t.dep:new Date(t.dep),te=t.end instanceof Date?t.end:new Date(t.end);
+   let ready=new Date(te.getTime()+60*60000);
+   let thisReady=new Date(end.getTime()+60*60000);
+   if(dep<ready && thisReady>td)hit={trip:t,ready};
+ });
+ return hit;
+}
+function selectedStopsForRoute(baseTrip,newRoute){
+ let names=new Set((baseTrip.ss||[]).filter(x=>x[3]!=="rest").map(x=>x[1]));
+ return newRoute.st.filter((x,i)=>x[3]==="rest"||i===0||i===newRoute.st.length-1||names.has(x[1]));
+}
+function defaultFaresForTrip(r){
+ let f={},bs=boardingStopsFor(r),ps=r.st.filter(x=>x[3]!=="rest");
+ bs.forEach(a=>ps.forEach(b=>{
+   let ia=r.st.indexOf(a),ib=r.st.indexOf(b),k=a[1]+"|"+b[1];
+   if(ib>ia&&can(r,a[1],b[1])&&STEP2_FARES[k]!=null)f[k]=STEP2_FARES[k];
+ }));
+ return f;
+}
+function cloneScheduledTrip(base,r,dep,ss,seriesId,kind){
+ let busObj=fleet.find(b=>b.uid===base.busUid); if(!busObj)return null;
+ let end=new Date(dep.getTime()+mins(r.st.at(-1)[0])*60000);
+ let terminalFee=ss.filter(x=>x[3]!=="rest").reduce((a,x)=>a+x[2],0);
+ let capFat=(crewData[base.crew[0]]?.fatigue||0)+(crewData[base.crew[1]]?.fatigue||0);
+ capFat/=2;
+ let cabFat=crewData[base.crew[2]]?.fatigue||0,fatiguePct=capFat*.18/100;
+ let km=ROUTE_KM[routeNo(r)],fuelLiters=km/100*busObj.fuel*(1+fatiguePct),fuelCost=fuelLiters*DIESEL_PRICE;
+ let highway=roadCost(r),catering=0,totalExpense=fuelCost+highway+terminalFee;
+ let t={r,dep,end,ss,cap:busObj.cap,busUid:busObj.uid,busName:busObj.model+" "+busObj.layout,
+   rev:0,total:0,fee:terminalFee,terminalFee,km,fuelRate:busObj.fuel,fuelLiters,fuelCost,highway,catering,totalExpense,
+   quota:defaultQuota(r,busObj.cap),customFares:defaultFaresForTrip(r),crew:[...base.crew],fatiguePct,
+   wearPenalty:Math.round(capFat*9),satisfaction:Math.max(0,100-Math.round(capFat*.22+cabFat*.28)),
+   recurringSeriesId:seriesId,recurringKind:kind,autoGenerated:true};
+ t.events=[];seedSales(t);t.busCondition={engine:91,tires:82};t.delay=0;t.soldByDest={};
+ return t;
+}
+function materializeRecurringPlans(){
+ if(!Array.isArray(recurringPlans))recurringPlans=[];
+ let now=new Date(),changed=false;
+ recurringPlans.filter(p=>p.active).forEach(p=>{
+   let start=new Date(p.start), horizon=new Date(now.getTime()+35*86400000);
+   let maxDay=p.days===0?Math.floor((horizon-start)/86400000):p.days-1;
+   maxDay=Math.max(-1,Math.min(maxDay,p.days===0?35:p.days-1));
+   for(let d=0;d<=maxDay;d++){
+     let dep=new Date(start);dep.setDate(dep.getDate()+d);
+     let key=p.id+"-OUT-"+d;
+     if(!trips.some(t=>t.seriesKey===key)){
+       let r=routes.find(x=>x.name===p.routeName);if(!r)continue;
+       let base={busUid:p.busUid,crew:p.crew,ss:p.ss};
+       let t=cloneScheduledTrip(base,r,dep,p.ss,p.id,"outbound");
+       if(t&&!busConflictInfo(p.busUid,t.dep,t.end)){t.seriesKey=key;trips.push(t);changed=true}
+     }
+     if(p.autoReturn){
+       let out=trips.find(t=>t.seriesKey===key);if(!out)continue;
+       let rr=reverseRouteOf(out.r);if(!rr)continue;
+       let rdep=new Date(out.end.getTime()+60*60000),rkey=p.id+"-RET-"+d;
+       if(!trips.some(t=>t.seriesKey===rkey)){
+         let rss=selectedStopsForRoute(out,rr),base={busUid:p.busUid,crew:p.crew,ss:rss};
+         let rt=cloneScheduledTrip(base,rr,rdep,rss,p.id,"return");
+         if(rt&&!busConflictInfo(p.busUid,rt.dep,rt.end)){rt.seriesKey=rkey;rt.prepMinutes=60;trips.push(rt);changed=true}
+       }
+     }
+   }
+ });
+ if(changed)trips.sort((a,b)=>new Date(a.dep)-new Date(b.dep));
+ return changed;
+}
+
 function openTrip(){
  refreshBusSelect();
+ repeatMode=1;
+ document.querySelectorAll(".repeatBtn").forEach(x=>x.classList.toggle("active",x.dataset.repeat==="1"));
+ if($("autoReturn"))$("autoReturn").checked=false;
+ if($("repeatInfo"))$("repeatInfo").textContent="Bu sefer yalnızca bir kez çalışır.";
  let n=new Date(),d=new Date(n.getTime()+60*60000);d.setSeconds(0,0);
  $("tripDate").min=localVal(n).slice(0,10);
  $("tripDate").value=localVal(d).slice(0,10);
@@ -455,7 +571,11 @@ function renderStops(){let r=routes[+$("route").value],base=dt();$("stops").inne
 function calc(){let r=routes[+$("route").value],ss=active(r),fee=ss.filter(x=>x[3]!="rest").reduce((a,x)=>a+x[2],0),d=dt(),earliest=new Date();earliest.setSeconds(0,0);earliest.setMinutes(earliest.getMinutes()+61);let valid=d>=earliest,weekend=[0,6].includes(d.getDay()),mo=d.getMonth()+1,season=(mo>=6&&mo<=8)?1.15:(mo==12||mo<=2)?1.05:1,score=r.m*(weekend?1.18:1)*season;$("fee").textContent=money(fee);$("demand").textContent=score>1.45?"Çok Yüksek":score>1.2?"Yüksek":"Orta";$("warning").innerHTML=valid
  ? `Kalkış: <b>${d.toLocaleString("tr-TR")}</b> • En erken planlama kuralı karşılanıyor.`
  : `<span class="bad">Sefer, mevcut gerçek saatten en az 1 saat sonrası için planlanmalıdır. En erken: <b>${earliest.toLocaleString("tr-TR",{dateStyle:"short",timeStyle:"short"})}</b></span>`;let c1=$("captain1").value,c2=$("captain2").value,cb=$("cabin").value,crewOK=c1&&c2&&cb&&c1!==c2;
- let busObj=fleet.find(b=>b.uid==$("bus").value),endCheck=new Date(d.getTime()+mins(r.st.at(-1)[0])*60000),busOK=busObj&&!busBusy(busObj.uid,d,endCheck);let avg=crewOK?(crewData[c1].fatigue+crewData[c2].fatigue+crewData[cb].fatigue)/3:0;$("crewEffect").value=!crewOK?"2 farklı kaptan ve 1 kabin memuru seçin":avg>=60?"Yüksek yorgunluk: yakıt/yıpranma/memnuniyet riski":avg>=40?"Orta yorgunluk etkisi":"Normal operasyon";if(busObj&&!busOK)$("warning").innerHTML+=`<br><span class="bad">Seçilen araç bu saat aralığında başka bir sefere atanmış.</span>`;
+ let busObj=fleet.find(b=>b.uid==$("bus").value),endCheck=new Date(d.getTime()+mins(r.st.at(-1)[0])*60000),busOK=busObj&&!busBusy(busObj.uid,d,endCheck);let avg=crewOK?(crewData[c1].fatigue+crewData[c2].fatigue+crewData[cb].fatigue)/3:0;$("crewEffect").value=!crewOK?"2 farklı kaptan ve 1 kabin memuru seçin":avg>=60?"Yüksek yorgunluk: yakıt/yıpranma/memnuniyet riski":avg>=40?"Orta yorgunluk etkisi":"Normal operasyon";if(busObj&&!busOK){
+ let hit=busConflictInfo(busObj.uid,d,endCheck);
+ let ready=hit?.ready;
+ $("warning").innerHTML+=`<br><span class="bad">Araç hazır değil.${ready?` En erken <b>${ready.toLocaleString("tr-TR",{dateStyle:"short",timeStyle:"short"})}</b> tarihinde/saatinde hazır olacak.`:" Başka bir sefer veya 60 dakikalık hazırlık süresiyle çakışıyor."}</span>`;
+}
  $("create").disabled=!(valid&&crewOK&&busOK);$("create").style.opacity=(valid&&crewOK&&busOK)?1:.45}
 function can(r,a,b){return !ban[r.dir].includes(a+">"+b)}
 function simulate(r,ss,cap){let stops=ss.filter(x=>x[3]!="rest"),occ=Array(cap).fill(null),rev=0,total=0;for(let i=0;i<stops.length-1;i++){let o=stops[i][1];occ.forEach((t,k)=>{if(t&&t==o)occ[k]=null});let cand=stops.slice(i+1).filter(x=>can(r,o,x[1]));if(!cand.length)continue;let count=Math.round((7+Math.random()*9)*r.m);for(let n=0;n<count;n++){let seat=occ.findIndex(x=>x===null);if(seat<0)break;let dest=cand[Math.floor(Math.random()*cand.length)][1],di=stops.findIndex(x=>x[1]==dest);rev+=Math.round((220+Math.max(1,di-i)*180)*(+$("price").value));occ[seat]=dest;total++}}return {rev,total}}
@@ -539,6 +659,19 @@ function createTrip(){
 nt.events=[]; seedSales(nt);
  nt.busCondition={engine:91,tires:82}; nt.delay=0;
  nt.soldByDest={};
+ // Tekrarlı sefer / otomatik dönüş planı
+ let selectedRepeat=Number(repeatMode||1),autoRet=!!$("autoReturn")?.checked;
+ if(selectedRepeat!==1||autoRet){
+   let seriesId="SER-"+Date.now()+"-"+busObj.uid;
+   nt.recurringSeriesId=seriesId;nt.recurringKind="outbound";nt.seriesKey=seriesId+"-OUT-0";
+   recurringPlans.push({
+     id:seriesId,active:true,start:dep.toISOString(),days:selectedRepeat,
+     routeName:r.name,busUid:busObj.uid,crew:[c1,c2,cb],
+     ss:ss.map(x=>[...x]),autoReturn:autoRet,createdAt:Date.now()
+   });
+   materializeRecurringPlans();
+ }
+
  income=trips.reduce((a,x)=>a+ticketRevenue(x),0);passengers=trips.reduce((a,x)=>a+totalTicketsSold(x),0);selectedTrack=trips.length-1;
  let persisted=saveGame();
  draw();
@@ -673,13 +806,13 @@ function writeProtectedLocal(payload){
 }
 
 function makeSavePayload(){
- return {version:"0.37",savedAt:Date.now(),cash,income,passengers,fleet,crewData,
- trips:trips.map(tripToSave),completedSeen,selectedTrack}
+ return {version:"0.38",savedAt:Date.now(),cash,income,passengers,fleet,crewData,
+ trips:trips.map(tripToSave),recurringPlans,completedSeen,selectedTrack}
 }
 function applySavePayload(d){
  if(!d||!Array.isArray(d.trips))return false;
  cash=Number(d.cash??cash);income=Number(d.income??0);passengers=Number(d.passengers??0);
- if(Array.isArray(d.fleet))fleet=d.fleet;if(d.crewData)Object.assign(crewData,d.crewData);
+ if(Array.isArray(d.fleet))fleet=d.fleet;if(d.crewData)Object.assign(crewData,d.crewData);recurringPlans=Array.isArray(d.recurringPlans)?d.recurringPlans:[];
  trips=d.trips.map(t=>syncTicketTruth({...t,dep:new Date(t.dep),end:new Date(t.end),tickets:Array.isArray(t.tickets)?t.tickets:[]}));
  completedSeen=d.completedSeen||{};selectedTrack=Math.min(d.selectedTrack||0,Math.max(0,trips.length-1));
  return true
@@ -780,6 +913,7 @@ function loadGame(){
   cash=Number(d.cash??cash); income=Number(d.income??0); passengers=Number(d.passengers??0);
   if(Array.isArray(d.fleet))fleet=d.fleet;
   if(d.crewData)Object.assign(crewData,d.crewData);
+  recurringPlans=Array.isArray(d.recurringPlans)?d.recurringPlans:[];
   trips=(d.trips||[]).map(t=>{
     let z={...t,dep:new Date(t.dep),end:new Date(t.end),tickets:Array.isArray(t.tickets)?t.tickets:[]};
     return syncTicketTruth(z);
@@ -790,6 +924,7 @@ function loadGame(){
   window.__loadedSaveKey=best.k;
   window.__lastLoadError="";
   processOffline(lastSaveAt,Date.now());
+  materializeRecurringPlans();
 
   // One-time migration to permanent keys. Only after successful in-memory restore.
   let migrated=makeSavePayload();
@@ -812,6 +947,7 @@ function simulateOfflineSales(t,fromMs,toMs){
  }
 }
 function processOffline(fromMs,toMs){
+ materializeRecurringPlans();
  if(toMs<=fromMs)return;
  let beforeCompleted=0,afterCompleted=0,offlineSold=0,offlineRevenue=0,offlineExpense=0;
  trips.forEach((t,i)=>{
