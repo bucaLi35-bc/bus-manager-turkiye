@@ -638,7 +638,7 @@ function syncTicketTruth(t){
 }
 
 function makeSavePayload(){
- return {version:"0.35",savedAt:Date.now(),cash,income,passengers,fleet,crewData,
+ return {version:"0.36",savedAt:Date.now(),cash,income,passengers,fleet,crewData,
  trips:trips.map(tripToSave),completedSeen,selectedTrack}
 }
 function applySavePayload(d){
@@ -702,7 +702,7 @@ async function initCloudAuth(){
  if(data.session?.user){cloudUser=data.session.user;cloudMode=true;await cloudBootstrap()}
  else $("authOverlay").classList.add("show");
 }
-const SAVE_KEY="busManagerTurkiye_v035";
+const SAVE_KEY="busManagerTurkiye_v036";
 const BACKUP_KEY="busManagerTurkiye_stable_backup";
 
 let lastSaveAt=Date.now(),completedSeen={};
@@ -739,7 +739,7 @@ function saveGame(){
 }
 function loadGame(){
  try{
-  let keys=[SAVE_KEY,BACKUP_KEY,"busManagerTurkiye_v034","busManagerTurkiye_v033","busManagerTurkiye_v032","busManagerTurkiye_v031","busManagerTurkiye_v030","busManagerTurkiye_v029","busManagerTurkiye_v028","busManagerTurkiye_v027","busManagerTurkiye_v026","busManagerTurkiye_v025","busManagerTurkiye_v024","busManagerTurkiye_v023","busManagerTurkiye_v022","busManagerTurkiye_v021","busManagerTurkiye_v020","busManagerTurkiye_v019","busManagerTurkiye_v011"];
+  let keys=[SAVE_KEY,BACKUP_KEY,"busManagerTurkiye_v035","busManagerTurkiye_v034","busManagerTurkiye_v033","busManagerTurkiye_v032","busManagerTurkiye_v031","busManagerTurkiye_v030","busManagerTurkiye_v029","busManagerTurkiye_v028","busManagerTurkiye_v027","busManagerTurkiye_v026","busManagerTurkiye_v025","busManagerTurkiye_v024","busManagerTurkiye_v023","busManagerTurkiye_v022","busManagerTurkiye_v021","busManagerTurkiye_v020","busManagerTurkiye_v019","busManagerTurkiye_v011"];
   let best=null,bestKey="";
   keys.forEach(k=>{
    try{
@@ -883,6 +883,33 @@ function setTripsTab(tab){
  if(tab==="completed")tab="done";
  tripsTab=tab;renderTripsCenter()
 }
+
+function onboardTickets(t,now){
+ let stops=tripPassengerStops(t);
+ if(!stops.length)return [];
+ let currentIdx=0;
+ stops.forEach((st,i)=>{if(whenFor(t,st)<=now)currentIdx=i});
+ if(now<t.dep)return [];
+
+ return validTickets(t).filter(k=>{
+   let a=stops.findIndex(x=>x[1]===k.from);
+   let b=stops.findIndex(x=>x[1]===k.to);
+   if(a<0||b<=a)return false;
+   // Yolcu biniş durağına ulaşıldıysa ve iniş durağı henüz geçilmediyse araçtadır.
+   return a<=currentIdx && currentIdx<b;
+ });
+}
+function onboardCount(t,now){
+ return onboardTickets(t,now).length;
+}
+function onboardDestinations(t,now){
+ let dist={};
+ onboardTickets(t,now).forEach(k=>{
+   if(k.to)dist[k.to]=(dist[k.to]||0)+1;
+ });
+ return dist;
+}
+
 function passengerSnapshot(t,now){
  let pStops=t.ss.filter(x=>x[3]!="rest"), currentIdx=0;
  pStops.forEach((st,i)=>{if(whenFor(t,st)<=now)currentIdx=i});
@@ -1034,7 +1061,7 @@ function renderTripsCenter(){
  let arr=tripsTab==="live"?live:tripsTab==="plan"?plan:done;
  let html=arr.length?arr.map(([t,i])=>{
    if(tripsTab==="plan")return plannedTripCard(t,i,now);
-   try{return tripCenterCard(t,i,now)}catch(e){console.error("Sefer kartı hatası",e,t);return `<div class="tcCard"><b>${t.r?.name||"Sefer"}</b><div class="bad">Detay kartı yüklenemedi.</div></div>`}
+   try{return tripCenterCard(t,i,now)}catch(e){console.error("Sefer kartı hatası",e,t);return `<div class="tcCard"><b>${t.r?.name||"Sefer"}</b><div class="bad">Detay kartı yüklenemedi: ${String(e?.message||e)}</div></div>`}
  }).join(""):`<div class="tcEmpty">${tripsTab==="live"?"Şu anda devam eden sefer yok.":tripsTab==="plan"?"Planlanmış sefer bulunmuyor.":"Henüz tamamlanmış sefer bulunmuyor."}</div>`;
  $("tcContent").innerHTML=`<div style="margin-bottom:10px;padding:8px 10px;border:1px dashed #315064;border-radius:8px;font-size:11px;color:#8fc9ec"><b>Kayıt Teşhis:</b> RAM ${trips.length} sefer • Yüklenen: ${window.__loadedSaveKey||"oturum"}<br>${localSaveDiagnostics()}</div>`+html;
 }
