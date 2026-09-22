@@ -1,5 +1,5 @@
 <!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Bus Manager Türkiye — Prototip v0.12</title>
+<title>Bus Manager Türkiye — Prototip v0.13</title>
 <style>
 :root{--bg:#07111d;--p:#0d1a28;--p2:#112235;--line:#23384d;--txt:#edf5ff;--mut:#91a6ba;--blue:#3187ff;--green:#34d878;--orange:#ff9d2e;--red:#ff5b67}
 *{box-sizing:border-box}body{margin:0;background:#06101b;color:var(--txt);font:14px system-ui,Segoe UI,Arial}.app{display:grid;grid-template-columns:190px 1fr;min-height:100vh}
@@ -47,6 +47,30 @@ input[type="date"],#tripHour,#tripMinute{cursor:pointer}
 .authOverlay.show{display:flex}.authCard{width:min(440px,100%);background:#111a21;border:1px solid #31404b;border-radius:16px;padding:24px;box-shadow:0 24px 80px #0008}
 .authCard input{width:100%;margin:6px 0 10px}.cloudBadge{font-size:12px;padding:5px 8px;border-radius:20px;background:#13251b;border:1px solid #28583b;color:#64e39a}
 .cloudErr{color:#ff7b83;font-size:13px;margin-top:8px}.cloudOk{color:#64e39a;font-size:13px;margin-top:8px}
+
+.tripsCenter{position:fixed;inset:0;background:#071018;z-index:90;display:none;overflow:auto;color:#e9f2f8}
+.tripsCenter.show{display:block}.tcTop{position:sticky;top:0;z-index:3;background:#09151f;border-bottom:1px solid #26333d;padding:14px 22px;display:flex;justify-content:space-between;align-items:center}
+.tcWrap{max-width:1280px;margin:auto;padding:22px}.tcTabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.tcTabs button{padding:11px 16px;border:1px solid #284154;background:#0d1d2a;color:#cfe4f2;border-radius:9px;cursor:pointer}
+.tcTabs button.active{background:#165b9f;border-color:#2e86d1;color:white}.tcCard{background:#0b1721;border:1px solid #243746;border-radius:12px;padding:16px;margin-bottom:14px}
+.tcHead{display:flex;justify-content:space-between;gap:15px;align-items:flex-start}.tcStatus{font-size:11px;border-radius:20px;padding:5px 9px;border:1px solid #2d4b5d}.tcStatus.live{color:#54e893;border-color:#27764b}.tcStatus.plan{color:#69b8ff;border-color:#28638f}.tcStatus.done{color:#c7d2da;border-color:#52616c}
+.tcGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:12px}.tcStat{background:#101f2a;border:1px solid #203744;border-radius:9px;padding:10px}.tcStat small{display:block;color:#7f9aaa;margin-bottom:4px}.tcStat b{font-size:17px}
+.tcPassenger{margin-top:12px;background:#07131b;border-left:3px solid #21c87a;padding:11px;border-radius:7px}.tcDest{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.tcDest span{background:#112634;border:1px solid #244252;border-radius:16px;padding:5px 8px;font-size:12px}
+.tcLedger{margin-top:12px;border-top:1px solid #223541;padding-top:10px}.tcLedger table{width:100%;border-collapse:collapse;font-size:12px}.tcLedger th,.tcLedger td{padding:7px;border-bottom:1px solid #1c303c;text-align:left}
+.tcEmpty{padding:35px;text-align:center;color:#7893a4;border:1px dashed #29404f;border-radius:12px}.tcActions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}.tcActions button{background:#17364a;color:#d9ecf7;border:1px solid #28516b;border-radius:7px;padding:7px 10px}
+@media(max-width:800px){.tcGrid{grid-template-columns:repeat(2,1fr)}.tcHead{display:block}.tcTop{padding:10px}.tcWrap{padding:12px}}
+
+.galleryCenter{position:fixed;inset:0;background:#071018;z-index:95;display:none;overflow:auto;color:#eaf3f8}
+.galleryCenter.show{display:block}.gcTop{position:sticky;top:0;z-index:4;background:#09151f;border-bottom:1px solid #263846;padding:14px 22px;display:flex;justify-content:space-between;align-items:center}
+.gcWrap{max-width:1280px;margin:auto;padding:20px}.dealerTabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px}.dealerTabs button{padding:10px 14px;border-radius:9px;border:1px solid #2a4354;background:#0e1c27;color:#d8e9f3}.dealerTabs button.active{background:#175c9e;color:white}
+.dealerHero{background:linear-gradient(135deg,#0e2030,#101923);border:1px solid #294151;border-radius:14px;padding:18px;margin-bottom:14px}.vehicleGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.vehicleCard{background:#0c1822;border:1px solid #273c4b;border-radius:12px;padding:15px}
+.financeGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}.financeOffer{background:#101f2a;border:1px solid #2a4353;border-radius:10px;padding:11px}.financeOffer.best{border-color:#2ca66a}.financeOffer small{color:#85a0b0}.financeOffer b{display:block;margin:4px 0}
+.gcBadge{font-size:11px;border:1px solid #356079;border-radius:15px;padding:3px 7px;color:#8bcdf7}.loanTable{width:100%;border-collapse:collapse}.loanTable th,.loanTable td{padding:8px;border-bottom:1px solid #213440;text-align:left;font-size:12px}
+@media(max-width:850px){.vehicleGrid,.financeGrid{grid-template-columns:1fr}.gcWrap{padding:12px}}
+
+.planStep2{display:none;margin-top:14px}.planStep2.show{display:block}.quotaGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.quotaBox,.fareBox{background:#0c1a24;border:1px solid #294151;border-radius:10px;padding:11px}.quotaBox input,.fareBox input{width:100%;box-sizing:border-box;margin-top:6px;background:#07131b;border:1px solid #365265;color:#fff;border-radius:7px;padding:8px}
+.fareGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.fareBox small{color:#82a0b1}.planSummary{background:#0b2021;border:1px solid #247254;border-radius:10px;padding:12px;margin:12px 0}
+@media(max-width:850px){.quotaGrid,.fareGrid{grid-template-columns:1fr 1fr}}@media(max-width:550px){.quotaGrid,.fareGrid{grid-template-columns:1fr}}
 </style></head><body>
 <div id="authOverlay" class="authOverlay">
  <div class="authCard">
@@ -64,9 +88,10 @@ input[type="date"],#tripHour,#tripMinute{cursor:pointer}
 </div>
 
 <div class="app"><aside><div class="logo">🚌 BUS MANAGER <span>TÜRKİYE</span></div><div class="nav">
-<button class="active">⌂ ANA SAYFA</button><button onclick="openTrip()">▣ OPERASYON</button><button onclick="document.getElementById('personnelPanel').scrollIntoView({behavior:'smooth'})">♟ PERSONEL</button><button>₺ FİNANS</button><button onclick="openMarket()">▥ FİRMA</button>
+<button class="active">⌂ ANA SAYFA</button><button onclick="openTrip()">▣ OPERASYON</button><button onclick="openTripsCenter()">🚌 SEFERLER</button><button onclick="document.getElementById('personnelPanel').scrollIntoView({behavior:'smooth'})">♟ PERSONEL</button><button>₺ FİNANS</button><button onclick="openGallery()">▥ GALERİ</button>
 </div><div style="position:absolute;bottom:25px;left:14px;right:14px" class="mut" id="realClock"></div></aside>
-<main><section class="hero"><h1 id="company">KARAÇALI TURİZM</h1><div class="cards">
+<main>
+<button type="button" onclick="openHomeTracker()" style="margin:8px">🚌 Sefer Takip Merkezi</button><section class="hero"><h1 id="company">KARAÇALI TURİZM</h1><div class="cards">
 <div class="metric"><small>KASA</small><b id="cash">8.450.000 ₺</b></div><div class="metric"><small>KREDİ BORCU</small><b>18.200.000 ₺</b></div>
 <div class="metric"><small>MARKA</small><b>12 / 100</b></div><div class="metric"><small>PAZAR PAYI</small><b>%17</b></div><div class="metric"><small>YOLCU MEMNUNİYETİ</small><b>78 / 100</b></div></div></section>
 <div class="content">
@@ -83,6 +108,36 @@ input[type="date"],#tripHour,#tripMinute{cursor:pointer}
 
 
 
+
+
+
+<section id="galleryCenter" class="galleryCenter">
+ <div class="gcTop"><div><b style="font-size:20px">▥ GALERİ & FİNANSMAN MERKEZİ</b><div class="mut">0 km araçlar • Marka bayileri • Dinamik finansman</div></div><button onclick="closeGallery()">← Ana Sayfa</button></div>
+ <div class="gcWrap">
+   <div class="dealerTabs" id="dealerTabs"></div>
+   <div id="galleryContent"></div>
+   <div class="dealerHero" style="margin-top:16px">
+    <b>🏦 BANKA FİNANSMAN MERKEZİ</b>
+    <div class="mut" style="margin-top:5px">Akbank • Halkbank • Türkiye İş Bankası • Ziraat Bankası • VakıfBank • Garanti BBVA • DenizBank • TEB — oranlar oyun ekonomisine göre dönemsel değişir.</div>
+   </div>
+   <div class="dealerHero"><b>📑 AKTİF ARAÇ KREDİLERİM</b><div id="activeLoans" style="margin-top:8px"></div></div>
+ </div>
+</section>
+
+<section id="tripsCenter" class="tripsCenter">
+ <div class="tcTop">
+   <div><b style="font-size:20px">🚌 SEFERLER MERKEZİ</b><div class="mut">Planlama • Canlı operasyon • Tamamlanmış sefer muhasebesi</div></div>
+   <button onclick="closeTripsCenter()">← Ana Sayfa</button>
+ </div>
+ <div class="tcWrap">
+   <div class="tcTabs">
+     <button id="tcTabLive" onclick="setTripsTab('live')">🟢 DEVAM EDEN <span id="tcLiveCount"></span></button>
+     <button id="tcTabPlan" onclick="setTripsTab('plan')">🕒 PLANLANMIŞ <span id="tcPlanCount"></span></button>
+     <button id="tcTabDone" onclick="setTripsTab('done')">✅ TAMAMLANMIŞ <span id="tcDoneCount"></span></button>
+   </div>
+   <div id="tcContent"></div>
+ </div>
+</section>
 
 <div class="modal" id="offlineModal"><div class="box">
  <h2>🌙 Siz yokken şirketiniz çalışmaya devam etti</h2>
@@ -132,7 +187,20 @@ input[type="date"],#tripHour,#tripMinute{cursor:pointer}
 <div class="row"><div><label>Bilet fiyat seviyesi</label><select id="price"><option value=".9">Ekonomik ×0,90</option><option value="1" selected>Standart ×1,00</option><option value="1.15">Premium ×1,15</option></select></div><div><label>Seçilen kalkış</label><input id="departurePreview" type="text" readonly></div></div>
 <div id="warning" class="mut"></div><h3>Sefer Personeli <span class="mut" style="font-size:12px">(2 kaptan + 1 kabin memuru zorunlu)</span></h3><div class="row"><div><label>1. Kaptan</label><select id="captain1"><option value="">Seçiniz</option><option>Ahmet Yılmaz</option><option>Mehmet Kaya</option><option>Ali Çetin</option><option>Burak Demir</option></select></div><div><label>2. Kaptan</label><select id="captain2"><option value="">Seçiniz</option><option>Ahmet Yılmaz</option><option>Mehmet Kaya</option><option>Ali Çetin</option><option>Burak Demir</option></select></div></div><div class="row"><div><label>Kabin Memuru</label><select id="cabin"><option value="">Seçiniz</option><option>Ayşe Demir</option><option>Elif Kaya</option></select></div><div><label>Personel Etkisi</label><input id="crewEffect" readonly value="Personel seçimi bekleniyor"></div></div><h3>Otogar / Durak Seçimi</h3><div id="stops" class="stops"></div>
 <div class="row"><div class="metric"><small>OTOGAR MALİYETİ</small><b id="fee">0 ₺</b></div><div class="metric"><small>TALEP</small><b id="demand">—</b></div></div>
-<div class="actions"><button class="primary secondary" onclick="closeTrip()">İptal</button><button class="primary" id="create" onclick="createTrip()">Seferi Planla</button></div>
+<div class="actions"><button class="primary secondary" onclick="closeTrip()">İptal</button><button class="primary" id="create" type="button" onclick="openQuotaFareStep()">Kontenjan ve Bilet Fiyatlarını Düzenle →</button></div>
+
+<div id="planStep2" class="planStep2">
+ <div class="sectionTitle">2. ADIM • KONTENJAN VE BİLET FİYATLARI</div>
+ <div class="mut">Aracın biniş kontenjanını duraklara dağıt ve bu sefere özel bilet fiyatlarını düzenle.</div>
+ <div id="quotaCapacitySummary" class="planSummary"></div>
+ <h3>Durak Biniş Kontenjanları</h3><div id="quotaEditor" class="quotaGrid"></div>
+ <h3 style="margin-top:16px">Duraklar Arası Bilet Fiyatları</h3>
+ <div id="fareEditor" class="fareGrid"></div>
+ <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
+   <button type="button" onclick="backFromQuotaFare()">← Geri</button>
+   <button type="button" class="primary" onclick="createTripFromStep2()">Seferi Planla</button>
+ </div>
+</div>
 </div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -209,7 +277,10 @@ function drawFleet(){
 }
 
 function boardingStopsFor(r){
- return r.st.filter(x=>x[3]!="rest").slice(0,-1);
+ const izmirToIstanbul=new Set(["İzmir","Manisa","Akhisar","Balıkesir","Bursa"]);
+ const istanbulToIzmir=new Set(["Esenler","Alibeyköy","Dudullu","Gebze","Bursa","Balıkesir"]);
+ const allowed=r.dir==="IZ-IST"?izmirToIstanbul:istanbulToIzmir;
+ return r.st.filter(x=>x[3]!=="rest"&&allowed.has(x[1]));
 }
 function defaultQuota(r,cap){
  let stops=boardingStopsFor(r),q={},weights=stops.map((x,i)=>Math.max(1,stops.length-i));
@@ -226,42 +297,68 @@ function drawQuotaEditor(){
 function quotaChanged(){
  if(!$("quotaEditor"))return;
  let b=fleet.find(x=>x.uid==$("bus").value),cap=b?b.cap:41,total=[...document.querySelectorAll(".quotaInput")].reduce((a,x)=>a+(+x.value||0),0);
- $("quotaSummary").innerHTML=`Dağıtılan: <b class="${total<=cap?"good":"bad"}">${total}/${cap}</b> koltuk ${total>cap?"• Araç kapasitesi aşılamaz.":""}`;
+ let qs=$("quotaSummary")||$("quotaCapacitySummary");
+ if(qs)qs.innerHTML=`Dağıtılan: <b class="${total<=cap?"good":"bad"}">${total}/${cap}</b> koltuk ${total>cap?"• Araç kapasitesi aşılamaz.":""}`;
  calc()
 }
 function readQuota(){
+ if(window.useEditedQuotaFares&&window.pendingQuota)return {...window.pendingQuota};
  let q={};document.querySelectorAll(".quotaInput").forEach(x=>q[x.dataset.stop]=Math.max(0,+x.value||0));return q
 }
 function quotaValid(){
- let b=fleet.find(x=>x.uid==$("bus").value),cap=b?b.cap:0;
- return Object.values(readQuota()).reduce((a,b)=>a+b,0)<=cap
+ let b=fleet.find(x=>x.uid==$("bus").value),cap=b?b.cap:0,q=(window.pendingQuota&&$("planStep2")?.classList.contains("show"))?window.pendingQuota:readQuota();
+ return Object.values(q).reduce((a,b)=>a+b,0)<=cap
 }
 function seedSales(t){
- t.salesByOrigin={};t.quotaInitial={...t.quota};t.quotaTransfers={};t.lastSalesUpdate=Date.now();
- Object.keys(t.quota).forEach((k,i)=>{
-   // deterministic-ish initial booking ratio: 42–72%
-   let ratio=.42+((i*17+t.cap)%31)/100;
-   t.salesByOrigin[k]=Math.min(t.quota[k],Math.floor(t.quota[k]*ratio));
- });
- t.sold=Object.values(t.salesByOrigin).reduce((a,b)=>a+b,0)
+ t.salesByOrigin={};
+ t.quotaInitial={...t.quota};
+ t.quotaTransfers={};
+ t.lastSalesUpdate=Date.now();
+ t.tickets=Array.isArray(t.tickets)?t.tickets:[];
+ Object.keys(t.quota||{}).forEach(k=>t.salesByOrigin[k]=0);
+ t.sold=0;
+ t.rev=0;
+ t.total=0;
 }
 function updateDynamicSales(t,now){
  if(!t.salesByOrigin)return;
- let elapsed=Math.max(0,(now.getTime()-(t.lastSalesUpdate||now.getTime()))/60000);
- if(elapsed<0.15)return;
+ let last=Number(t.lastSalesUpdate||now.getTime());
+ let elapsed=Math.max(0,(now.getTime()-last)/60000);
+ if(elapsed<0.5)return;
+
  let stops=boardingStopsFor(t.r);
- stops.forEach((st,i)=>{
-   let stopTime=whenFor(t,st); if(now>=stopTime)return; // departed origin closes
-   let sold=t.salesByOrigin[st[1]]||0,q=t.quota[st[1]]||0;if(sold>=q)return;
-   let minsTo=(stopTime-now)/60000;
-   let urgency=minsTo<60?0.11:minsTo<180?0.065:0.035;
-   let demand=(t.r.name.includes("Hat 3")?1.22:t.r.name.includes("Hat 2")?1.10:1)*(1+i*.06);
-   let chance=Math.min(.85,elapsed*urgency*demand);
-   let pseudo=((Math.floor(now.getTime()/10000)+i*37+t.cap*11)%100)/100;
-   if(pseudo<chance)t.salesByOrigin[st[1]]=Math.min(q,sold+1+((i+t.cap)%2));
- });
- t.sold=Object.values(t.salesByOrigin).reduce((a,b)=>a+b,0);
- t.lastSalesUpdate=now.getTime()
+ let wholeMinutes=Math.min(720,Math.floor(elapsed)); // offline catch-up, max 12h per pass
+ let seedBase=Math.floor(last/60000);
+
+ for(let minute=1;minute<=wholeMinutes;minute++){
+  let tickTime=new Date(last+minute*60000);
+  stops.forEach((st,i)=>{
+   let stopTime=whenFor(t,st);
+   if(tickTime>=stopTime)return; // that boarding stop has closed
+   let name=st[1],sold=Number(t.salesByOrigin[name]||0),q=Number(t.quota[name]||0);
+   if(sold>=q||q<=0)return;
+
+   let minsTo=Math.max(1,(stopTime-tickTime)/60000);
+   // Sales start slowly and accelerate toward the stop's departure.
+   let baseChance=minsTo>720?.004:minsTo>360?.008:minsTo>180?.015:minsTo>60?.028:.05;
+   let routeDemand=t.r.name.includes("Hat 3")?1.18:t.r.name.includes("Hat 2")?1.08:1.0;
+   let discountBoost=t.discounts?.[name]?1.18:1;
+   let chance=Math.min(.16,baseChance*routeDemand*discountBoost);
+
+   // deterministic pseudo-random per trip/minute/stop, so reopen/catch-up is stable
+   let tripSeed=(new Date(t.dep).getTime()/60000)|0;
+   let x=Math.abs(Math.sin((seedBase+minute)*12.9898+(i+1)*78.233+tripSeed*.013))*43758.5453;
+   let pseudo=x-Math.floor(x);
+   if(pseudo<chance){
+     t.salesByOrigin[name]=sold+1;
+   }
+  });
+ }
+ t.sold=Object.values(t.salesByOrigin).reduce((a,b)=>a+(Number(b)||0),0);
+ t.total=t.sold;
+ // No synthetic revenue: revenue stays tied to real ticket records.
+ t.rev=ticketRevenue(t);
+ t.lastSalesUpdate=last+wholeMinutes*60000;
 }
 function quotaSuggestions(t,now){
  let arr=[],stops=boardingStopsFor(t.r);
@@ -292,7 +389,7 @@ function increaseQuota(stop){
  if(donor){t.quota[donor]--;t.quota[stop]=(t.quota[stop]||0)+1}saveGame();renderTracker()
 }
 function openTrip(){
- refreshBusSelect();drawQuotaEditor();
+ refreshBusSelect();
  let n=new Date(),d=new Date(n.getTime()+60*60000);d.setSeconds(0,0);
  $("tripDate").min=localVal(n).slice(0,10);
  $("tripDate").value=localVal(d).slice(0,10);
@@ -300,16 +397,72 @@ function openTrip(){
  $("tripMinute").value=pad(d.getMinutes());
  $("modal").classList.add("show");syncPreview();renderStops()
 }
-function closeTrip(){$("modal").classList.remove("show")}
+function closeTrip(){
+ $("modal").classList.remove("show");
+ if($("planStep2")){$("planStep2").classList.remove("show");$("planStep2").style.display=""}
+ let box=$("modal").querySelector(".box"); if(box)[...box.children].forEach(el=>{if(el!==$("planStep2")){el.style.display="";delete el.dataset.step1Hidden}});
+}
 function active(r){return r.st.filter((s,i)=>s[3]=="rest"||i==0||i==r.st.length-1||document.querySelector(`[data-s="${i}"]`)?.checked)}
 function renderStops(){let r=routes[+$("route").value],base=dt();$("stops").innerHTML="";r.st.forEach((s,i)=>{let must=i==0||i==r.st.length-1||s[3]=="rest",d=document.createElement("div");d.className="stop";d.innerHTML=`<b>${tm(when(r,s),base)}</b><span>${s[1]} <small class="mut">${s[3]=="rest"?"• Mola":`• ${money(s[2])}`}</small></span>${s[3]=="rest"?"<b>☕</b>":`<input type="checkbox" data-s="${i}" ${must?"checked disabled":"checked"}>`}`;$("stops").appendChild(d)});document.querySelectorAll("[data-s]").forEach(x=>x.onchange=calc);calc()}
 function calc(){let r=routes[+$("route").value],ss=active(r),fee=ss.filter(x=>x[3]!="rest").reduce((a,x)=>a+x[2],0),d=dt(),earliest=new Date();earliest.setSeconds(0,0);earliest.setMinutes(earliest.getMinutes()+61);let valid=d>=earliest,weekend=[0,6].includes(d.getDay()),mo=d.getMonth()+1,season=(mo>=6&&mo<=8)?1.15:(mo==12||mo<=2)?1.05:1,score=r.m*(weekend?1.18:1)*season;$("fee").textContent=money(fee);$("demand").textContent=score>1.45?"Çok Yüksek":score>1.2?"Yüksek":"Orta";$("warning").innerHTML=valid
  ? `Kalkış: <b>${d.toLocaleString("tr-TR")}</b> • En erken planlama kuralı karşılanıyor.`
  : `<span class="bad">Sefer, mevcut gerçek saatten en az 1 saat sonrası için planlanmalıdır. En erken: <b>${earliest.toLocaleString("tr-TR",{dateStyle:"short",timeStyle:"short"})}</b></span>`;let c1=$("captain1").value,c2=$("captain2").value,cb=$("cabin").value,crewOK=c1&&c2&&cb&&c1!==c2;
  let busObj=fleet.find(b=>b.uid==$("bus").value),endCheck=new Date(d.getTime()+mins(r.st.at(-1)[0])*60000),busOK=busObj&&!busBusy(busObj.uid,d,endCheck);let avg=crewOK?(crewData[c1].fatigue+crewData[c2].fatigue+crewData[cb].fatigue)/3:0;$("crewEffect").value=!crewOK?"2 farklı kaptan ve 1 kabin memuru seçin":avg>=60?"Yüksek yorgunluk: yakıt/yıpranma/memnuniyet riski":avg>=40?"Orta yorgunluk etkisi":"Normal operasyon";if(busObj&&!busOK)$("warning").innerHTML+=`<br><span class="bad">Seçilen araç bu saat aralığında başka bir sefere atanmış.</span>`;
- $("create").disabled=!(valid&&crewOK&&busOK&&quotaValid());$("create").style.opacity=(valid&&crewOK&&busOK&&quotaValid())?1:.45}
+ $("create").disabled=!(valid&&crewOK&&busOK);$("create").style.opacity=(valid&&crewOK&&busOK)?1:.45}
 function can(r,a,b){return !ban[r.dir].includes(a+">"+b)}
 function simulate(r,ss,cap){let stops=ss.filter(x=>x[3]!="rest"),occ=Array(cap).fill(null),rev=0,total=0;for(let i=0;i<stops.length-1;i++){let o=stops[i][1];occ.forEach((t,k)=>{if(t&&t==o)occ[k]=null});let cand=stops.slice(i+1).filter(x=>can(r,o,x[1]));if(!cand.length)continue;let count=Math.round((7+Math.random()*9)*r.m);for(let n=0;n<count;n++){let seat=occ.findIndex(x=>x===null);if(seat<0)break;let dest=cand[Math.floor(Math.random()*cand.length)][1],di=stops.findIndex(x=>x[1]==dest);rev+=Math.round((220+Math.max(1,di-i)*180)*(+$("price").value));occ[seat]=dest;total++}}return {rev,total}}
+
+
+const STEP2_FARES={
+ "İzmir|Balıkesir":420,"İzmir|Bursa":650,"İzmir|Gebze":1300,"İzmir|Dudullu":1300,"İzmir|Alibeyköy":1300,"İzmir|Esenler":1300,
+ "Manisa|Balıkesir":400,"Manisa|Bursa":690,"Manisa|Gebze":1100,"Manisa|Dudullu":1300,"Manisa|Alibeyköy":1300,"Manisa|Esenler":1300,
+ "Akhisar|Balıkesir":300,"Akhisar|Bursa":650,"Akhisar|Gebze":1100,"Akhisar|Dudullu":1200,"Akhisar|Alibeyköy":1200,"Akhisar|Esenler":1200,
+ "Balıkesir|Bursa":400,"Balıkesir|Gebze":800,"Balıkesir|Dudullu":900,"Balıkesir|Alibeyköy":900,"Balıkesir|Esenler":900,
+ "Bursa|Gebze":500,"Bursa|Dudullu":735,"Bursa|Alibeyköy":735,"Bursa|Esenler":735,
+ "Esenler|Bursa":735,"Alibeyköy|Bursa":735,"Dudullu|Bursa":735,"Esenler|Balıkesir":900,"Alibeyköy|Balıkesir":900,"Dudullu|Balıkesir":900,
+ "Esenler|Akhisar":1200,"Alibeyköy|Akhisar":1200,"Dudullu|Akhisar":1200,"Esenler|Manisa":1300,"Alibeyköy|Manisa":1300,"Dudullu|Manisa":1300,
+ "Esenler|İzmir":1300,"Alibeyköy|İzmir":1300,"Dudullu|İzmir":1300,"Gebze|Bursa":500,"Gebze|Balıkesir":800,"Gebze|Akhisar":1100,"Gebze|Manisa":1100,"Gebze|İzmir":1200,
+ "Bursa|Balıkesir":400,"Bursa|Akhisar":650,"Bursa|Manisa":690,"Bursa|İzmir":650,"Balıkesir|Akhisar":300,"Balıkesir|Manisa":420,"Balıkesir|İzmir":480
+};
+function selectedRouteForEditor(){return routes[+$("route").value]}
+function selectedBusForEditor(){return fleet.find(b=>b.uid===$("bus").value)}
+function openQuotaFareStep(){
+ let r=selectedRouteForEditor(),bus=selectedBusForEditor();
+ if(!r||!bus)return alert("Önce rota ve araç seçmelisin.");
+ let c1=$("captain1").value,c2=$("captain2").value,cb=$("cabin").value;
+ if(!c1||!c2||!cb||c1===c2)return alert("Önce 2 farklı kaptan ve 1 kabin memuru seçmelisin.");
+ window.pendingQuota=defaultQuota(r,bus.cap); window.pendingFares={};
+ let stops=boardingStopsFor(r);
+ $("quotaEditor").innerHTML=stops.map(st=>`<div class="quotaBox"><b>${st[1]}</b><small class="mut"> Biniş kontenjanı</small><input class="step2Quota" data-stop="${st[1]}" type="number" min="0" max="${bus.cap}" value="${pendingQuota[st[1]]}" oninput="pendingQuota[this.dataset.stop]=Math.max(0,+this.value||0);updateQuotaSummary2()"></div>`).join("");
+ let passengerStops=r.st.filter(x=>x[3]!="rest"),pairs=[];
+ stops.forEach(fs=>passengerStops.forEach(ts=>{let a=r.st.indexOf(fs),b=r.st.indexOf(ts),k=fs[1]+"|"+ts[1];if(b>a&&can(r,fs[1],ts[1])&&STEP2_FARES[k]!=null)pairs.push([fs[1],ts[1],STEP2_FARES[k]])}));
+ pairs.forEach(([a,b,p])=>pendingFares[a+"|"+b]=p);
+ $("fareEditor").innerHTML=pairs.map(([a,b,p])=>`<div class="fareBox"><small>${a} → ${b}</small><input type="number" min="0" step="5" value="${p}" data-fare="${a}|${b}" oninput="pendingFares[this.dataset.fare]=Math.max(0,+this.value||0)"><div class="mut">Temel fiyat: ${money(p)}</div></div>`).join("");
+ let box=$("modal").querySelector(".box");
+ [...box.children].forEach(el=>{if(el!==$("planStep2")){el.dataset.step1Hidden="1";el.style.display="none"}});
+ $("planStep2").classList.add("show");$("planStep2").style.display="block";
+ updateQuotaSummary2();box.scrollTop=0;
+}
+function updateQuotaSummary2(){
+ let bus=selectedBusForEditor(),sum=Object.values(pendingQuota||{}).reduce((a,b)=>a+(+b||0),0),left=(bus?.cap||0)-sum;
+ $("quotaCapacitySummary").innerHTML=`Araç kapasitesi: <b>${bus?.cap||0}</b> • Dağıtılan: <b>${sum}</b> • <span class="${left<0?"bad":"good"}">${left>=0?"Kalan kontenjan":"Kapasite aşımı"}: <b>${Math.abs(left)}</b></span>`;
+}
+function backFromQuotaFare(){
+ let box=$("modal").querySelector(".box");
+ $("planStep2").classList.remove("show");$("planStep2").style.display="none";
+ [...box.children].forEach(el=>{if(el.dataset.step1Hidden){el.style.display="";delete el.dataset.step1Hidden}});
+}
+
+function createTripFromStep2(){
+ let bus=selectedBusForEditor(),sum=Object.values(window.pendingQuota||{}).reduce((a,b)=>a+(+b||0),0);
+ if(!bus)return alert("Araç seçimi bulunamadı.");
+ if(sum>bus.cap)return alert(`Toplam kontenjan ${sum}; araç kapasitesi ${bus.cap}. Kontenjanı azaltmalısın.`);
+ if(sum===0)return alert("En az bir durağa kontenjan vermelisin.");
+ window.useEditedQuotaFares=true;
+ createTrip();
+ window.useEditedQuotaFares=false;
+}
+
 function createTrip(){
  let r=routes[+$("route").value],dep=dt(),earliest=new Date();earliest.setSeconds(0,0);earliest.setMinutes(earliest.getMinutes()+61);
  if(dep<earliest)return calc();
@@ -330,12 +483,18 @@ function createTrip(){
   fee:terminalFee,terminalFee,km,fuelRate:busObj.fuel,fuelLiters,fuelCost,highway,catering,totalExpense,quota,
   crew:[c1,c2,cb],fatiguePct,wearPenalty,satisfaction});
  let nt=trips[trips.length-1];
- nt.events=[]; seedSales(nt);
+ if(window.useEditedQuotaFares){
+ nt.quota={...window.pendingQuota};
+ nt.customFares={...window.pendingFares};
+ nt.quotaInitial={...nt.quota};
+}
+nt.events=[]; seedSales(nt);
  nt.busCondition={engine:91,tires:82}; nt.delay=0;
- nt.soldByDest={}; ss.filter(x=>x[3]!="rest").slice(1).forEach((x,i)=>nt.soldByDest[x[1]]=i<3?Math.max(0,Math.round(nt.sold/(i+2))):0);
- income+=sim.rev;passengers+=sim.total;closeTrip();draw();selectedTrack=trips.length-1;saveGame();openTracker()
+ nt.soldByDest={};
+ income=trips.reduce((a,x)=>a+ticketRevenue(x),0);passengers=trips.reduce((a,x)=>a+totalTicketsSold(x),0);closeTrip();draw();selectedTrack=trips.length-1;saveGame();openTracker()
 }
 function draw(){
+ income=trips.reduce((a,x)=>a+ticketRevenue(x),0);passengers=trips.reduce((a,x)=>a+totalTicketsSold(x),0);
  let now=new Date(),h="";
  trips.forEach(t=>{
   let dur=t.end-t.dep,el=Math.max(0,Math.min(dur,now-t.dep)),pct=Math.round(el/dur*100);
@@ -345,14 +504,15 @@ function draw(){
   h+=`<div class="trip"><div class="triptop"><b>${t.r.name}</b><span class="good">${status}</span></div>
   <div class="routeLine">${t.ss.filter(x=>x[3]!="rest").map(x=>x[1]).join(" → ")}<br>🚌 ${t.busUid} • ${t.busName} • ${t.cap} koltuk • ${t.fuelRate} L/100 km</div>
   <div class="progress"><i style="width:${pct}%"></i></div>
-  <div class="mut">Konum: <b>${cur}</b> • Kalkış ${t.dep.toLocaleString("tr-TR")} • Varış ${t.end.toLocaleString("tr-TR")} • Tahmini ${t.total} yolcu<br>
+  <div class="mut">Konum: <b>${cur}</b> • Kalkış ${t.dep.toLocaleString("tr-TR")} • Varış ${t.end.toLocaleString("tr-TR")} • Satılan ${totalTicketsSold(t)} bilet<br>
   👨‍✈️ ${t.crew[0]} + ${t.crew[1]} • 👩‍💼 ${t.crew[2]} • Memnuniyet %${t.satisfaction}</div>
+  <div class="tcPassenger" style="margin-top:9px">${tripPassengerText(t,now)}</div>
   <div style="margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:8px">
    <b>Sefer Finansmanı</b><br>
    <span class="mut">Mesafe:</span> ${t.km} km • <span class="mut">Motorin:</span> ${DIESEL_PRICE.toLocaleString("tr-TR",{minimumFractionDigits:2})} TL/L<br>
    Yakıt: <b>${t.fuelLiters.toFixed(1)} L / ${money(t.fuelCost)}</b> • Kaptan yorgunluk etkisi +%${(t.fatiguePct*100).toFixed(1)}<br>
    ${routeNo(t.r)==1?"Köprü":"Otoyol + Köprü"}: <b>${money(t.highway)}</b> • Otogar: <b>${money(t.terminalFee)}</b> • İkram: <b>${money(t.catering)}</b><br>
-   Toplam sefer gideri: <b>${money(t.totalExpense)}</b> • Bilet geliri: <b>${money(t.rev)}</b> • Net: <b class="${net>=0?"good":"bad"}">${money(net)}</b>
+   Toplam sefer gideri: <b>${money(t.totalExpense)}</b> • Bilet geliri: <b>${money(ticketRevenue(t))}</b> • Net: <b class="${net>=0?"good":"bad"}">${money(net)}</b>
    <br><small class="mut">Personel maaşları sefer giderine dahil değildir; aylık maaş sisteminde hesaplanacaktır.</small>
   </div></div>`
  });
@@ -395,14 +555,14 @@ async function cloudLogout(){
  await cloudSave();await cloud.auth.signOut();cloudUser=null;cloudMode=false;$("authOverlay").classList.add("show");authMessage("Bulut hesabından çıkış yapıldı.",true)
 }
 function makeSavePayload(){
- return {version:"0.12",savedAt:Date.now(),cash,income,passengers,fleet,crewData,
+ return {version:"0.28",savedAt:Date.now(),cash,income,passengers,fleet,crewData,
  trips:trips.map(tripToSave),completedSeen,selectedTrack}
 }
 function applySavePayload(d){
  if(!d||!Array.isArray(d.trips))return false;
  cash=Number(d.cash??cash);income=Number(d.income??0);passengers=Number(d.passengers??0);
  if(Array.isArray(d.fleet))fleet=d.fleet;if(d.crewData)Object.assign(crewData,d.crewData);
- trips=d.trips.map(t=>({...t,dep:new Date(t.dep),end:new Date(t.end)}));
+ trips=d.trips.map(t=>syncTicketTruth({...t,dep:new Date(t.dep),end:new Date(t.end),tickets:Array.isArray(t.tickets)?t.tickets:[]}));
  completedSeen=d.completedSeen||{};selectedTrack=Math.min(d.selectedTrack||0,Math.max(0,trips.length-1));
  return true
 }
@@ -428,7 +588,7 @@ async function cloudBootstrap(){
    // First cloud login: migrate current local game into cloud.
    await cloudSave()
  }
- refreshBusSelect();drawFleet();draw();renderTracker();saveGame();
+ refreshBusSelect();drawFleet();draw();renderTracker();renderTripsCenter();saveGame();
  if($("saveState"))$("saveState").textContent="☁ Bulut senkronizasyonu aktif";
 }
 async function initCloudAuth(){
@@ -436,7 +596,7 @@ async function initCloudAuth(){
  if(data.session?.user){cloudUser=data.session.user;cloudMode=true;await cloudBootstrap()}
  else $("authOverlay").classList.add("show");
 }
-const SAVE_KEY="busManagerTurkiye_v012";
+const SAVE_KEY="busManagerTurkiye_v028";
 
 let lastSaveAt=Date.now(),completedSeen={};
 
@@ -451,12 +611,22 @@ function saveGame(){
 }
 function loadGame(){
  try{
-  let raw=localStorage.getItem(SAVE_KEY)||localStorage.getItem("busManagerTurkiye_v011");if(!raw)return false;
+  let raw=localStorage.getItem(SAVE_KEY)
+ ||localStorage.getItem("busManagerTurkiye_v027")
+ ||localStorage.getItem("busManagerTurkiye_v026")
+ ||localStorage.getItem("busManagerTurkiye_v025")
+ ||localStorage.getItem("busManagerTurkiye_v024")
+ ||localStorage.getItem("busManagerTurkiye_v023")
+ ||localStorage.getItem("busManagerTurkiye_v022")
+ ||localStorage.getItem("busManagerTurkiye_v021")
+ ||localStorage.getItem("busManagerTurkiye_v020")
+ ||localStorage.getItem("busManagerTurkiye_v019")
+ ||localStorage.getItem("busManagerTurkiye_v011");if(!raw)return false;
   let d=JSON.parse(raw);if(!d||!d.trips)return false;
   cash=Number(d.cash??cash);income=Number(d.income??0);passengers=Number(d.passengers??0);
   if(Array.isArray(d.fleet))fleet=d.fleet;
   if(d.crewData)Object.assign(crewData,d.crewData);
-  trips=d.trips.map(t=>({...t,dep:new Date(t.dep),end:new Date(t.end)}));
+  trips=d.trips.map(t=>syncTicketTruth({...t,dep:new Date(t.dep),end:new Date(t.end),tickets:Array.isArray(t.tickets)?t.tickets:[]}));
   completedSeen=d.completedSeen||{};selectedTrack=Math.min(d.selectedTrack||0,Math.max(0,trips.length-1));
   lastSaveAt=d.savedAt||Date.now();
   processOffline(lastSaveAt,Date.now());
@@ -510,6 +680,248 @@ function resetSave(){
 }
 window.addEventListener("beforeunload",saveGame);
 document.addEventListener("visibilitychange",()=>{if(document.hidden)saveGame()});
+
+
+const dealerCatalog={
+ "Mercedes-Benz":{finance:"Mercedes-Benz Finansman",down:35,models:[
+  {model:"Travego 16 SHD",layout:"2+1",cap:41,price:28000000,fuel:25},
+  {model:"Tourismo 16 RHD",layout:"2+1",cap:41,price:25000000,fuel:22},
+  {model:"Tourismo 16 RHD",layout:"2+2",cap:54,price:23000000,fuel:22},
+  {model:"Tourismo 15 RHD",layout:"2+1",cap:50,price:21000000,fuel:22}]},
+ "MAN":{finance:"MAN Finans",down:30,models:[{model:"MAN Lion’s Coach",layout:"2+1",cap:41,price:20000000,fuel:24},{model:"MAN Lion’s Coach",layout:"2+2",cap:54,price:18000000,fuel:24}]},
+ "Neoplan":{finance:"MAN Finans / Neoplan",down:30,models:[{model:"Neoplan Tourliner",layout:"2+1",cap:41,price:22500000,fuel:24}]},
+ "TEMSA":{finance:"TEMSA Finans",down:25,models:[
+  {model:"Temsa Maraton",layout:"2+1",cap:41,price:17000000,fuel:23},{model:"Temsa Maraton",layout:"2+2",cap:54,price:15000000,fuel:23},
+  {model:"Temsa Safir Plus",layout:"2+1",cap:41,price:14000000,fuel:22},{model:"Temsa Safir Plus",layout:"2+2",cap:50,price:12000000,fuel:22}]}
+};
+const bankNames=["Akbank","Halkbank","Türkiye İş Bankası","Ziraat Bankası","VakıfBank","Garanti BBVA","DenizBank","TEB"];
+let galleryDealer="Mercedes-Benz";
+let activeLoans=JSON.parse(localStorage.getItem("bmt_active_loans")||"[]");
+function dynRate(provider,months){
+ let monthKey=new Date().getFullYear()*12+new Date().getMonth(), seed=[...provider].reduce((a,c)=>a+c.charCodeAt(0),0)+monthKey*7+months*13;
+ let base=months<=12?1.65:months<=24?1.95:months<=36?2.25:2.55;
+ return +(base+(seed%46)/100).toFixed(2)
+}
+function loanCalc(price,downPct,months,rate){
+ let down=Math.round(price*downPct/100),principal=price-down,r=rate/100;
+ let payment=r?principal*r*Math.pow(1+r,months)/(Math.pow(1+r,months)-1):principal/months;
+ return {down,principal,payment:Math.round(payment),total:Math.round(down+payment*months)}
+}
+function financeOffers(dealer,v){
+ let d=dealerCatalog[dealer], terms=[12,24,36,48], arr=[];
+ terms.forEach(m=>{let rate=dynRate(d.finance,m),x=loanCalc(v.price,d.down,m,rate);arr.push({provider:d.finance,down:d.down,months:m,rate,...x})});
+ // Add two dynamically selected bank offers
+ let picks=[bankNames[(v.price/1000000|0)%bankNames.length],bankNames[((v.price/1000000|0)+3)%bankNames.length]];
+ picks.forEach((b,j)=>{let m=j?48:36,down=20+j*5,rate=dynRate(b,m);arr.push({provider:b,down,months:m,rate,...loanCalc(v.price,down,m,rate)})});
+ return arr
+}
+function openGallery(){document.querySelector(".app").style.display="none";$("galleryCenter").classList.add("show");renderGallery()}
+function closeGallery(){$("galleryCenter").classList.remove("show");document.querySelector(".app").style.display=""}
+function setDealer(d){galleryDealer=d;renderGallery()}
+function buyCash(dealer,idx){
+ let v=dealerCatalog[dealer].models[idx];if(cash<v.price)return alert("Kasada peşin alım için yeterli bakiye yok.");
+ cash-=v.price;fleet.push({uid:"BUS-"+String(fleet.length+1).padStart(3,"0"),name:v.model,layout:v.layout,cap:v.cap,price:v.price,fuel:v.fuel,km:0,dealer});
+ saveGame();refreshBusSelect();drawFleet();draw();renderGallery();alert(v.model+" 0 km olarak filoya eklendi.")
+}
+function takeFinance(dealer,idx,offerIdx){
+ let v=dealerCatalog[dealer].models[idx],o=financeOffers(dealer,v)[offerIdx];
+ if(cash<o.down)return alert("Peşinat için kasada yeterli bakiye yok.");
+ cash-=o.down;let uid="BUS-"+String(fleet.length+1).padStart(3,"0");
+ fleet.push({uid,name:v.model,layout:v.layout,cap:v.cap,price:v.price,fuel:v.fuel,km:0,dealer,financed:true});
+ activeLoans.push({uid,vehicle:v.model,provider:o.provider,principal:o.principal,months:o.months,remaining:o.months,monthly:o.payment,rate:o.rate,down:o.down,nextDue:new Date(Date.now()+30*86400000).toISOString()});
+ localStorage.setItem("bmt_active_loans",JSON.stringify(activeLoans));saveGame();refreshBusSelect();drawFleet();draw();renderGallery();alert("Finansman onaylandı. "+v.model+" filoya eklendi.")
+}
+function renderLoans(){
+ if(!$("activeLoans"))return;
+ $("activeLoans").innerHTML=activeLoans.length?`<table class="loanTable"><thead><tr><th>Araç</th><th>Finans</th><th>Aylık</th><th>Kalan</th><th>Oran</th></tr></thead><tbody>${activeLoans.map(l=>`<tr><td>${l.uid} • ${l.vehicle}</td><td>${l.provider}</td><td>${money(l.monthly)}</td><td>${l.remaining}/${l.months} ay</td><td>%${l.rate}</td></tr>`).join("")}</tbody></table>`:`<span class="mut">Aktif araç kredisi bulunmuyor.</span>`
+}
+function renderGallery(){
+ $("dealerTabs").innerHTML=Object.keys(dealerCatalog).map(d=>`<button class="${d===galleryDealer?"active":""}" onclick='setDealer(${JSON.stringify(d)})'>${d} Bayii</button>`).join("");
+ let d=dealerCatalog[galleryDealer];
+ $("galleryContent").innerHTML=`<div class="dealerHero"><span class="gcBadge">0 KM YENİ ARAÇ</span><h2>${galleryDealer} Bayii</h2><b>Finans Merkezi: ${d.finance}</b><div class="mut">Standart üretici peşinatı bugün %${d.down}. Vade ve faiz oranları oyun ayına göre dinamik güncellenir.</div></div>
+ <div class="vehicleGrid">${d.models.map((v,i)=>{let offers=financeOffers(galleryDealer,v);return `<div class="vehicleCard"><div class="tcHead"><div><b style="font-size:18px">${v.model}</b><div class="mut">${v.layout} • ${v.cap} koltuk • ${v.fuel} L/100 km • 0 km</div></div><b>${money(v.price)}</b></div>
+ <div class="tcActions"><button onclick='buyCash(${JSON.stringify(galleryDealer)},${i})'>Peşin Al</button></div>
+ <div class="financeGrid">${offers.map((o,j)=>`<div class="financeOffer ${j===1?"best":""}"><small>${o.provider}</small><b>${o.months} Ay • %${o.rate} aylık</b><div>Peşinat: ${money(o.down)}</div><div>Aylık: <b>${money(o.payment)}</b></div><div class="mut">Toplam geri ödeme: ${money(o.total)}</div><button onclick='takeFinance(${JSON.stringify(galleryDealer)},${i},${j})'>Bu Teklifle Al</button></div>`).join("")}</div></div>`}).join("")}</div>`;
+ renderLoans()
+}
+
+let tripsTab="live";
+function openTripsCenter(){
+ $("tripsCenter").classList.add("show");
+ document.querySelector(".app").style.display="none";
+ setTripsTab(tripsTab);
+}
+function closeTripsCenter(){
+ $("tripsCenter").classList.remove("show");
+ document.querySelector(".app").style.display="";
+}
+function setTripsTab(tab){
+ if(tab==="planned")tab="plan";
+ if(tab==="completed")tab="done";
+ tripsTab=tab;renderTripsCenter()
+}
+function passengerSnapshot(t,now){
+ let pStops=t.ss.filter(x=>x[3]!="rest"), currentIdx=0;
+ pStops.forEach((st,i)=>{if(whenFor(t,st)<=now)currentIdx=i});
+ if(now<t.dep)currentIdx=0;
+ let current=pStops[currentIdx]?.[1]||pStops[0]?.[1]||"—";
+ let dest=onboardDestinations(t,now),total=onboardCount(t,now);
+ return {current,total,dist:Object.entries(dest).filter(([,v])=>v>0),pStops,currentIdx}
+}
+function demoLedger(t){
+ return validTickets(t).slice(-12).reverse().map(k=>({from:k.from,to:k.to,seat:k.seat,price:k.price,soldAt:k.soldAt}))
+}
+function tripPassengerText(t,now){
+ let snap=passengerSnapshot(t,now), status=statusFor(t,now);
+ if(status==="Kalkışa Hazırlanıyor"){
+   let sold=totalTicketsSold(t);
+   return `<b>Kalkışa kadar dinamik bilet satışı devam ediyor.</b><br>Şu ana kadar <b>${sold}</b> bilet satıldı. Oyuncunun belirlediği durak kontenjanları talebe göre doluyor.`;
+ }
+ if(status==="Tamamlandı"){
+   return `<b>Sefer tamamlandı.</b> Sefer boyunca satılan gerçek bilet: <b>${totalTicketsSold(t)}</b>. Durak hareketleri ve finansal sonuç aşağıda korunur.`;
+ }
+ let first=snap.pStops[0]?.[1]||"İzmir";
+ return `<b>🚌 ${first} Otogarından ${snap.total} yolcu ile hareket etti.</b><br>${snap.dist.length?snap.dist.map(([d,n])=>`${d}: <b>${n}</b>`).join(" • "):"Henüz destinasyon dağılımı oluşmadı."}`;
+}
+function tripCenterCard(t,i,now){
+ let status=statusFor(t,now), cls=status==="Seferde"?"live":status==="Tamamlandı"?"done":"plan";
+ syncTicketTruth(t); let snap=passengerSnapshot(t,now), sold=totalTicketsSold(t), realRev=ticketRevenue(t), net=realRev-(t.totalExpense||0);
+ let ledger=demoLedger(t);
+ let quotaHtml=status==="Kalkışa Hazırlanıyor" ? `<div class="tcLedger"><b>Durak Kontenjan / Satış Takibi</b><div class="tcDest">${boardingStopsFor(t.r).map(st=>{let n=st[1],q=t.quota?.[n]||0,so=t.salesByOrigin?.[n]||0;return `<span>${n}: <b>${so}/${q}</b></span>`}).join("")}</div><small class="mut">Talep olmayan bir durağa bilet satışı oluşmak zorunda değildir. Kalkıştan sonra ulaşılan durağın satışı kapanır; ilerideki uygun durakların satışı sürer.</small></div>`:"";
+ let finance=status==="Tamamlandı" ? `<div class="tcGrid">
+   <div class="tcStat"><small>Toplam taşınan yolcu</small><b>${totalTicketsSold(t)}</b></div>
+   <div class="tcStat"><small>Bilet geliri</small><b class="good">${money(realRev)}</b></div>
+   <div class="tcStat"><small>Yakıt gideri</small><b class="bad">-${money(t.fuelCost||0)}</b></div>
+   <div class="tcStat"><small>Otogar gideri</small><b class="bad">-${money(t.terminalFee||0)}</b></div>
+   <div class="tcStat"><small>Otoyol / Köprü</small><b class="bad">-${money(t.highway||0)}</b></div>
+   <div class="tcStat"><small>İkram</small><b class="bad">-${money(t.catering||0)}</b></div>
+   <div class="tcStat"><small>Toplam gider</small><b>${money(t.totalExpense||0)}</b></div>
+   <div class="tcStat"><small>Net sefer sonucu</small><b class="${net>=0?"good":"bad"}">${money(net)}</b></div>
+ </div>` : `<div class="tcGrid">
+   <div class="tcStat"><small>Araç</small><b>${t.busUid}</b><div>${t.busName}</div></div>
+   <div class="tcStat"><small>Doluluk / satış</small><b>${sold}/${t.cap}</b></div>
+   <div class="tcStat"><small>Mevcut durak</small><b>${snap.current}</b></div>
+   <div class="tcStat"><small>Bilet geliri</small><b class="good">${money(realRev)}</b></div>
+ </div>`;
+ return `<div class="tcCard">
+   <div class="tcHead"><div><b style="font-size:18px">${t.r.name}</b><div class="mut">${t.dep.toLocaleString("tr-TR")} • ${t.ss.filter(x=>x[3]!="rest").map(x=>x[1]).join(" → ")}</div></div><span class="tcStatus ${cls}">${status.toUpperCase()}</span></div>
+   ${finance}
+   <div class="tcPassenger">${tripPassengerText(t,now)}<div class="tcDest">${snap.dist.map(([d,n])=>`<span>${d} <b>${n}</b></span>`).join("")}</div></div>
+   ${quotaHtml}
+   <div class="tcLedger"><b>Detaylı Bilet Satış Bilgisi</b>
+    <table><thead><tr><th>Biniş</th><th>İniş</th><th>Koltuk</th><th>Yaklaşık bilet</th></tr></thead><tbody>${ledger.length?ledger.map(x=>`<tr><td>${x.from}</td><td>${x.to}</td><td>${x.seat}</td><td>${money(x.price)}</td></tr>`).join(""):`<tr><td colspan="4" class="mut">Henüz gösterilecek bilet hareketi yok.</td></tr>`}</tbody></table>
+   </div>
+   <div class="tcActions"><button onclick="closeTripsCenter();selectedTrack=${i};openTracker()">Sefer Takip Merkezini Aç</button>${status==="Kalkışa Hazırlanıyor"?`<button onclick="closeTripsCenter();selectedTrack=${i};openTracker()">Canlı Bilet Satışını İzle</button>`:""}</div>
+ </div>`
+}
+
+function plannedTripCard(t,i,now){
+ try{
+  // Eski ve yeni kayıt şemalarını aynı kartta güvenle okuyabilmek için
+  // yalnızca trip nesnesindeki temel alanları kullan.
+  let routeName=t?.r?.name||t?.routeName||"Planlanmış Sefer";
+  let dep=new Date(t?.dep);
+  let depText=isNaN(dep.getTime())?"—":dep.toLocaleString("tr-TR");
+  let cap=Number(t?.cap||0);
+
+  let tickets=Array.isArray(t?.tickets)
+    ? t.tickets.filter(x=>x && x.status!=="cancelled")
+    : [];
+
+  let sold=tickets.length;
+  let rev=tickets.reduce((a,x)=>a+(Number(x.price)||0),0);
+
+  // Eski prototiplerde gerçek tickets dizisi yoksa simülasyon gelirini kullanma.
+  // Satış ve gelir 0 kabul edilir; veri tutarlılığı kuralımız korunur.
+  let busLabel=t?.busName||t?.bus?.name||t?.busUid||"—";
+  let busUid=t?.busUid||t?.bus?.uid||"—";
+
+  let quota=(t?.quota && typeof t.quota==="object")?t.quota:{};
+  let sales={};
+  tickets.forEach(x=>{if(x.from)sales[x.from]=(sales[x.from]||0)+1});
+
+  let boarding=[];
+  if(t?.r && Array.isArray(t.r.st)){
+    const izmirSet=new Set(["İzmir","Manisa","Akhisar","Balıkesir","Bursa"]);
+    const istSet=new Set(["Esenler","Alibeyköy","Dudullu","Gebze","Bursa","Balıkesir"]);
+    const allowed=t.r.dir==="IZ-IST"?izmirSet:istSet;
+    boarding=t.r.st.filter(x=>x && x[3]!=="rest" && allowed.has(x[1]));
+  }else{
+    boarding=Object.keys(quota).map(n=>[0,n]);
+  }
+
+  let quotaRows=boarding.map(st=>{
+    let n=st[1], q=Number(quota[n]||0), so=Number(sales[n]||0);
+    return `<span>${n}: <b>${so}/${q}</b></span>`;
+  }).join("");
+
+  let stopNames=(t?.r && Array.isArray(t.r.st))
+    ? t.r.st.filter(x=>x&&x[3]!=="rest").map(x=>x[1]).join(" → ")
+    : "";
+
+  let statusText=(!isNaN(dep.getTime()) && now<dep)?"Kalkışa hazırlanıyor":"Planlandı";
+
+  return `<div class="tcCard">
+   <div class="tcHead">
+    <div><b style="font-size:18px">${routeName}</b>
+     <div class="mut">Kalkış: ${depText}${stopNames?` • ${stopNames}`:""}</div>
+    </div>
+    <span class="tcStatus plan">PLANLANDI</span>
+   </div>
+   <div class="tcGrid">
+    <div class="tcStat"><small>Araç</small><b>${busUid}</b><div>${busLabel}</div></div>
+    <div class="tcStat"><small>Satılan / Kapasite</small><b>${sold}/${cap}</b></div>
+    <div class="tcStat"><small>Gerçek bilet geliri</small><b class="good">${money(rev)}</b></div>
+    <div class="tcStat"><small>Durum</small><b>${statusText}</b></div>
+   </div>
+   <div class="tcLedger"><b>Durak Kontenjan / Satış Takibi</b>
+    <div class="tcDest">${quotaRows||'<span class="mut">Bu eski kayıtta kontenjan bilgisi bulunmuyor.</span>'}</div>
+    <small class="mut">Kalkış saatine kadar dinamik satış devam eder.</small>
+   </div>
+   <div class="tcLedger"><b>Detaylı Bilet Satışları</b>
+    <table><thead><tr><th>Biniş</th><th>İniş</th><th>Koltuk</th><th>Bilet</th></tr></thead>
+    <tbody>${tickets.length?tickets.slice(-15).reverse().map(x=>`<tr><td>${x.from||"—"}</td><td>${x.to||"—"}</td><td>${x.seat||"—"}</td><td>${money(Number(x.price)||0)}</td></tr>`).join(""):'<tr><td colspan="4" class="mut">Henüz gerçek bilet satışı yok.</td></tr>'}</tbody></table>
+   </div>
+   <div class="tcActions"><button type="button" onclick="closeTripsCenter();selectedTrack=${i};openTracker()">Sefer Takip Merkezini Aç</button></div>
+  </div>`;
+ }catch(e){
+  console.error("Planlanmış sefer kartı hatası",e,t);
+  let name=t?.r?.name||t?.routeName||"Planlanmış sefer";
+  let dep=new Date(t?.dep), dt=isNaN(dep.getTime())?"—":dep.toLocaleString("tr-TR");
+  return `<div class="tcCard"><b>${name}</b><div class="mut">Kalkış: ${dt}</div><div class="bad">Sefer kaydı okunamadı. Tarayıcı konsolunda ayrıntı kaydedildi.</div></div>`;
+ }
+}
+function renderTripsCenter(){
+ if(!$("tripsCenter")||!$("tripsCenter").classList.contains("show"))return;
+ let now=new Date(),live=[],plan=[],done=[];
+ trips.forEach((t,i)=>{let st=statusFor(t,now);(st==="Seferde"?live:st==="Tamamlandı"?done:plan).push([t,i])});
+ if($("tcLiveCount"))$("tcLiveCount").textContent=`(${live.length})`;
+ if($("tcPlanCount"))$("tcPlanCount").textContent=`(${plan.length})`;
+ if($("tcDoneCount"))$("tcDoneCount").textContent=`(${done.length})`;
+ [["live","tcTabLive"],["plan","tcTabPlan"],["done","tcTabDone"]].forEach(([key,id])=>{
+ let el=$(id); if(el)el.classList.toggle("active",tripsTab===key)
+});
+ let arr=tripsTab==="live"?live:tripsTab==="plan"?plan:done;
+ let html=arr.length?arr.map(([t,i])=>{
+   if(tripsTab==="plan")return plannedTripCard(t,i,now);
+   try{return tripCenterCard(t,i,now)}catch(e){console.error("Sefer kartı hatası",e,t);return `<div class="tcCard"><b>${t.r?.name||"Sefer"}</b><div class="bad">Detay kartı yüklenemedi.</div></div>`}
+ }).join(""):`<div class="tcEmpty">${tripsTab==="live"?"Şu anda devam eden sefer yok.":tripsTab==="plan"?"Planlanmış sefer bulunmuyor.":"Henüz tamamlanmış sefer bulunmuyor."}</div>`;
+ $("tcContent").innerHTML=html;
+}
+
+
+function openHomeTracker(){
+ let now=new Date();
+ if(!trips.length)return alert("Henüz takip edilecek bir sefer bulunmuyor.");
+ let candidates=trips.map((t,i)=>({t,i,dep:new Date(t.dep),end:tripEnd(t)}));
+ let active=candidates.find(x=>now>=x.dep && now<x.end);
+ let planned=candidates.filter(x=>x.dep>now).sort((a,b)=>a.dep-b.dep)[0];
+ let chosen=active||planned||candidates.slice().sort((a,b)=>b.dep-a.dep)[0];
+ if(!chosen)return alert("Takip edilecek sefer bulunamadı.");
+ selectedTrack=chosen.i;
+ openTracker();
+}
+
 function openTracker(){
  if(!trips.length){openTrip();return}
  document.querySelector(".app").classList.add("trackHidden");$("tracker").classList.add("show");renderTracker()
@@ -535,7 +947,7 @@ function renderTracker(){
  let minsLeft=Math.max(0,Math.ceil((t.dep-now)/60000)),arrLeft=Math.max(0,Math.ceil((t.end-now)/60000));
  let nextOpen=boardingStopsFor(t.r).filter(x=>now<whenFor(t,x)).map(x=>x[1]).join(", ")||"Yok"; let feed=[`Satışa açık biniş noktaları: ${nextOpen}`,`+1 ${t.ss.filter(x=>x[3]!="rest")[1]?.[1]||"ara durak"} bileti satıldı`,`Rezervasyon güncellendi`,`Araç ve ekip sefere hazır`];
  $("trackFeed").innerHTML=feed.map((x,i)=>`<div><time>${new Date(now-i*7*60000).toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"})}</time>${i==2?"❌":"🟢"} ${x}</div>`).join("");
- $("trackRevenue").innerHTML=`<div class="trackTitle">GELİR / GİDER BİLGİLERİ</div><div class="metricRow"><span>Bilet Geliri</span><b>${money(t.rev)}</b></div><div class="metricRow"><span>Yakıt</span><b>-${money(t.fuelCost)}</b></div><div class="metricRow"><span>${routeNo(t.r)==1?"Köprü":"Otoyol + Köprü"}</span><b>-${money(t.highway)}</b></div><div class="metricRow"><span>Otogar</span><b>-${money(t.terminalFee)}</b></div><div class="metricRow"><span>İkram</span><b>${money(t.catering)}</b></div><div class="metricRow"><span>NET SEFER</span><b class="${t.rev-t.totalExpense>=0?"good":"bad"}">${money(t.rev-t.totalExpense)}</b></div><small class="mut">Personel maaşı aylık bordrodadır.</small>`;
+ $("trackRevenue").innerHTML=`<div class="trackTitle">GELİR / GİDER BİLGİLERİ</div><div class="metricRow"><span>Bilet Geliri</span><b>${money(ticketRevenue(t))}</b></div><div class="metricRow"><span>Yakıt</span><b>-${money(t.fuelCost)}</b></div><div class="metricRow"><span>${routeNo(t.r)==1?"Köprü":"Otoyol + Köprü"}</span><b>-${money(t.highway)}</b></div><div class="metricRow"><span>Otogar</span><b>-${money(t.terminalFee)}</b></div><div class="metricRow"><span>İkram</span><b>${money(t.catering)}</b></div><div class="metricRow"><span>NET SEFER</span><b class="${t.rev-t.totalExpense>=0?"good":"bad"}">${money(t.rev-t.totalExpense)}</b></div><small class="mut">Personel maaşı aylık bordrodadır.</small>`;
  $("trackForecast").innerHTML=`<div class="trackTitle">DOLULUK TAHMİNİ <span class="demoTag">SİMÜLASYON</span></div><div class="trackLabel">MEVCUT DOLULUK</div><div class="trackBig">%${occPct}</div><div class="bar"><i style="width:${occPct}%"></i></div><br><div class="trackLabel">TAHMİNİ FİNAL DOLULUK</div><div class="trackBig">%${Math.min(100,occPct+Math.round((100-occPct)*.55))}</div><div class="metricRow"><span>Tahmini Yolcu</span><b>${Math.min(t.cap,Math.round(occ+(t.cap-occ)*.55))}/${t.cap}</b></div>`;
  $("trackCountdown").innerHTML=`<div class="trackTitle">${now<t.dep?"KALKIŞA KALAN SÜRE":"VARIŞA KALAN SÜRE"}</div><div class="countdown">${Math.floor((now<t.dep?minsLeft:arrLeft)/60).toString().padStart(2,"0")}:${((now<t.dep?minsLeft:arrLeft)%60).toString().padStart(2,"0")}</div><div class="metricRow"><span>Kalkış</span><b>${t.dep.toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"})}</b></div><div class="metricRow"><span>Varış</span><b>${t.end.toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"})}</b></div>`;
  let prog=Math.max(0,Math.min(1,(now-t.dep)/(t.end-t.dep))),remain=Math.max(0,Math.round(t.km*(1-prog))),fuelRemain=Math.max(0,Math.round(820-t.fuelLiters*prog));
@@ -556,7 +968,7 @@ $("tripMinute").onchange=()=>{syncPreview();renderStops()};
 $("price").onchange=calc;$("bus").onchange=()=>{drawQuotaEditor();calc()};$("captain1").onchange=calc;$("captain2").onchange=calc;$("cabin").onchange=calc;
 let restored=loadGame();refreshBusSelect();drawFleet();draw();
 setTimeout(showOfflineSummary,250);setTimeout(initCloudAuth,100);
-setInterval(()=>{$("realClock").innerHTML=new Date().toLocaleDateString("tr-TR",{dateStyle:"long"})+"<br><b style='font-size:22px;color:white'>"+new Date().toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"})+"</b>";draw();renderTracker();
+setInterval(()=>{$("realClock").innerHTML=new Date().toLocaleDateString("tr-TR",{dateStyle:"long"})+"<br><b style='font-size:22px;color:white'>"+new Date().toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"})+"</b>";draw();renderTracker();renderTripsCenter();
  if(Date.now()-lastSaveAt>10000){saveGame();if($("saveState"))$("saveState").textContent="● Kaydedildi"}
 },1000);
 </script></body></html>
