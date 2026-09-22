@@ -162,7 +162,7 @@ input[type="date"],#tripHour,#tripMinute{cursor:pointer}
    <div class="dashGrid">
     <div class="trackCard span4" id="trackCapacity"></div>
     <div class="trackCard span4" id="trackDest"></div>
-    <div class="trackCard span4"><div class="trackTitle">CANLI AKIŞ <span class="demoTag">SİMÜLASYON</span></div><div class="feed" id="trackFeed"></div></div>
+    <div class="trackCard span4"><div class="trackTitle">CANLI BİLET AKIŞI <span class="good">GERÇEK KAYIT</span></div><div class="feed" id="trackFeed"></div></div>
     <div class="trackCard span4" id="trackRevenue"></div>
     <div class="trackCard span3" id="trackForecast"></div>
     <div class="trackCard span2" id="trackCountdown"></div>
@@ -638,7 +638,7 @@ function syncTicketTruth(t){
 }
 
 function makeSavePayload(){
- return {version:"0.34",savedAt:Date.now(),cash,income,passengers,fleet,crewData,
+ return {version:"0.35",savedAt:Date.now(),cash,income,passengers,fleet,crewData,
  trips:trips.map(tripToSave),completedSeen,selectedTrack}
 }
 function applySavePayload(d){
@@ -702,7 +702,7 @@ async function initCloudAuth(){
  if(data.session?.user){cloudUser=data.session.user;cloudMode=true;await cloudBootstrap()}
  else $("authOverlay").classList.add("show");
 }
-const SAVE_KEY="busManagerTurkiye_v034";
+const SAVE_KEY="busManagerTurkiye_v035";
 const BACKUP_KEY="busManagerTurkiye_stable_backup";
 
 let lastSaveAt=Date.now(),completedSeen={};
@@ -739,7 +739,7 @@ function saveGame(){
 }
 function loadGame(){
  try{
-  let keys=[SAVE_KEY,BACKUP_KEY,"busManagerTurkiye_v033","busManagerTurkiye_v032","busManagerTurkiye_v031","busManagerTurkiye_v030","busManagerTurkiye_v029","busManagerTurkiye_v028","busManagerTurkiye_v027","busManagerTurkiye_v026","busManagerTurkiye_v025","busManagerTurkiye_v024","busManagerTurkiye_v023","busManagerTurkiye_v022","busManagerTurkiye_v021","busManagerTurkiye_v020","busManagerTurkiye_v019","busManagerTurkiye_v011"];
+  let keys=[SAVE_KEY,BACKUP_KEY,"busManagerTurkiye_v034","busManagerTurkiye_v033","busManagerTurkiye_v032","busManagerTurkiye_v031","busManagerTurkiye_v030","busManagerTurkiye_v029","busManagerTurkiye_v028","busManagerTurkiye_v027","busManagerTurkiye_v026","busManagerTurkiye_v025","busManagerTurkiye_v024","busManagerTurkiye_v023","busManagerTurkiye_v022","busManagerTurkiye_v021","busManagerTurkiye_v020","busManagerTurkiye_v019","busManagerTurkiye_v011"];
   let best=null,bestKey="";
   keys.forEach(k=>{
    try{
@@ -1068,7 +1068,7 @@ function currentStopIndex(t,now){
 }
 function renderTracker(){
  if(!$("tracker").classList.contains("show")||!trips.length)return;
- let now=new Date(),t=trips[Math.min(selectedTrack,trips.length-1)];updateDynamicSales(t,now);let idx=currentStopIndex(t,now),status=statusFor(t,now);
+ let now=new Date(),t=trips[Math.min(selectedTrack,trips.length-1)];updateDynamicSales(t,now);syncTicketTruth(t);let idx=currentStopIndex(t,now),status=statusFor(t,now);
  let occ=Math.min(t.cap,Math.max(0,t.sold||0)),occPct=Math.round(occ/t.cap*100);
  $("trackClock").innerHTML=`📅 ${now.toLocaleDateString("tr-TR",{dateStyle:"long"})} &nbsp;&nbsp; 🕘 <b>${now.toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</b> <span class="good">• OYUN ZAMANI CANLI</span>`;
  $("trackBalance").textContent=money(cash+income-trips.reduce((a,x)=>a+x.totalExpense,0));
@@ -1079,9 +1079,20 @@ function renderTracker(){
  $("trackCapacity").innerHTML=`<div class="trackTitle">KAPASİTE ÖZETİ</div><div class="ring" style="--occ:${occPct}%"><b>%${occPct}</b></div><div class="metricRow"><span>Toplam Kapasite</span><b>${t.cap}</b></div><div class="metricRow"><span>Satılan</span><b class="good">${occ}</b></div><div class="metricRow"><span>Boş Koltuk</span><b class="bad">${t.cap-occ}</b></div>`;
  let dest=t.soldByDest||{};$("trackDest").innerHTML='<div class="trackTitle">DESTİNASYON DAĞILIMI</div>'+Object.entries(dest).map(([k,v])=>`<div class="metricRow"><span>${k}</span><span style="width:45%"><span class="bar"><i style="width:${Math.min(100,v/Math.max(1,occ)*100)}%"></i></span></span><b>${v}</b></div>`).join("")+`<div class="metricRow"><span>Toplam Yolcu</span><b>${occ}</b></div>`;
  let minsLeft=Math.max(0,Math.ceil((t.dep-now)/60000)),arrLeft=Math.max(0,Math.ceil((t.end-now)/60000));
- let nextOpen=boardingStopsFor(t.r).filter(x=>now<whenFor(t,x)).map(x=>x[1]).join(", ")||"Yok"; let feed=[`Satışa açık biniş noktaları: ${nextOpen}`,`+1 ${t.ss.filter(x=>x[3]!="rest")[1]?.[1]||"ara durak"} bileti satıldı`,`Rezervasyon güncellendi`,`Araç ve ekip sefere hazır`];
- $("trackFeed").innerHTML=feed.map((x,i)=>`<div><time>${new Date(now-i*7*60000).toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"})}</time>${i==2?"❌":"🟢"} ${x}</div>`).join("");
- $("trackRevenue").innerHTML=`<div class="trackTitle">GELİR / GİDER BİLGİLERİ</div><div class="metricRow"><span>Bilet Geliri</span><b>${money(ticketRevenue(t))}</b></div><div class="metricRow"><span>Yakıt</span><b>-${money(t.fuelCost)}</b></div><div class="metricRow"><span>${routeNo(t.r)==1?"Köprü":"Otoyol + Köprü"}</span><b>-${money(t.highway)}</b></div><div class="metricRow"><span>Otogar</span><b>-${money(t.terminalFee)}</b></div><div class="metricRow"><span>İkram</span><b>${money(t.catering)}</b></div><div class="metricRow"><span>NET SEFER</span><b class="${t.rev-t.totalExpense>=0?"good":"bad"}">${money(t.rev-t.totalExpense)}</b></div><small class="mut">Personel maaşı aylık bordrodadır.</small>`;
+ let nextOpen=boardingStopsFor(t.r).filter(x=>now<whenFor(t,x)).map(x=>x[1]).join(", ")||"Yok";
+ let realTickets=validTickets(t).slice().sort((a,b)=>new Date(b.soldAt||0)-new Date(a.soldAt||0));
+ let feedHtml=`<div><time>${now.toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"})}</time>🟢 Satışa açık biniş noktaları: ${nextOpen}</div>`;
+ if(realTickets.length){
+   feedHtml+=realTickets.slice(0,8).map(x=>{
+     let soldTime=x.soldAt?new Date(x.soldAt):null;
+     let tm=soldTime&&!isNaN(soldTime.getTime())?soldTime.toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"}):"—";
+     return `<div><time>${tm}</time>🎫 ${x.from||"—"} → ${x.to||"—"} • Koltuk ${x.seat||"—"} • <b>${money(Number(x.price)||0)}</b></div>`;
+   }).join("");
+ }else{
+   feedHtml+=`<div><time>—</time>⏳ Henüz gerçek bilet satışı oluşmadı.</div>`;
+ }
+ $("trackFeed").innerHTML=feedHtml;
+ $("trackRevenue").innerHTML=`<div class="trackTitle">GELİR / GİDER BİLGİLERİ</div><div class="metricRow"><span>Bilet Geliri</span><b>${money(ticketRevenue(t))}</b></div><div class="metricRow"><span>Yakıt</span><b>-${money(t.fuelCost)}</b></div><div class="metricRow"><span>${routeNo(t.r)==1?"Köprü":"Otoyol + Köprü"}</span><b>-${money(t.highway)}</b></div><div class="metricRow"><span>Otogar</span><b>-${money(t.terminalFee)}</b></div><div class="metricRow"><span>İkram</span><b>${money(t.catering)}</b></div><div class="metricRow"><span>NET SEFER</span><b class="${ticketRevenue(t)-t.totalExpense>=0?"good":"bad"}">${money(ticketRevenue(t)-t.totalExpense)}</b></div><small class="mut">Personel maaşı aylık bordrodadır.</small>`;
  $("trackForecast").innerHTML=`<div class="trackTitle">DOLULUK TAHMİNİ <span class="demoTag">SİMÜLASYON</span></div><div class="trackLabel">MEVCUT DOLULUK</div><div class="trackBig">%${occPct}</div><div class="bar"><i style="width:${occPct}%"></i></div><br><div class="trackLabel">TAHMİNİ FİNAL DOLULUK</div><div class="trackBig">%${Math.min(100,occPct+Math.round((100-occPct)*.55))}</div><div class="metricRow"><span>Tahmini Yolcu</span><b>${Math.min(t.cap,Math.round(occ+(t.cap-occ)*.55))}/${t.cap}</b></div>`;
  $("trackCountdown").innerHTML=`<div class="trackTitle">${now<t.dep?"KALKIŞA KALAN SÜRE":"VARIŞA KALAN SÜRE"}</div><div class="countdown">${Math.floor((now<t.dep?minsLeft:arrLeft)/60).toString().padStart(2,"0")}:${((now<t.dep?minsLeft:arrLeft)%60).toString().padStart(2,"0")}</div><div class="metricRow"><span>Kalkış</span><b>${t.dep.toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"})}</b></div><div class="metricRow"><span>Varış</span><b>${t.end.toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"})}</b></div>`;
  let prog=Math.max(0,Math.min(1,(now-t.dep)/(t.end-t.dep))),remain=Math.max(0,Math.round(t.km*(1-prog))),fuelRemain=Math.max(0,Math.round(820-t.fuelLiters*prog));
