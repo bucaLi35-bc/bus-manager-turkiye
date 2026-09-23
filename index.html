@@ -197,8 +197,8 @@ input[type="date"],#tripHour,#tripMinute{cursor:pointer}
  </div>
  <label>OTOMATİK DÖNÜŞ</label>
  <label style="display:flex;align-items:center;gap:9px;margin-top:7px;padding:10px;border:1px solid #33414d;border-radius:7px;background:#141b21">
-   <input id="autoReturn" type="checkbox" style="width:auto">
-   <span><b>Otomatik dönüş planı oluştur</b><br><small class="mut">Varıştan 60 dk sonra araç hazırlanır ve aynı hat numarasıyla ters yönde sefere çıkar.</small></span>
+   <input id="autoReturn" type="checkbox" style="width:auto" onchange="updateRepeatInfo()">
+   <span><b>Otomatik dönüş planı oluştur</b><br><small class="mut">Seçilen sefer tipine bağlı çalışır. Her gidişten sonra 60 dk hazırlık sonrası aynı hat numarasıyla ters yönde sefere çıkar.</small></span>
  </label>
  <div id="repeatInfo" class="mut" style="margin-top:8px">Bu sefer yalnızca bir kez çalışır.</div>
 </div>
@@ -455,13 +455,27 @@ function increaseQuota(stop){
 }
 
 let repeatMode=1;
+function updateRepeatInfo(){
+ let auto=!!$("autoReturn")?.checked;
+ let main=repeatMode===1
+   ?"Bu sefer yalnızca bir kez çalışır."
+   :repeatMode===0
+     ?"Bu sefer her gün aynı saatte süresiz tekrarlar."
+     :`Bu sefer ${repeatMode} gün boyunca her gün aynı saatte tekrarlar.`;
+ let ret="";
+ if(auto){
+   ret=repeatMode===1
+     ?" Otomatik dönüş de bu tek sefer için uygulanır; araç varıştan 60 dk sonra ters yönde sefere çıkar."
+     :repeatMode===0
+       ?" Otomatik dönüş de plana bağlıdır; her günlük gidişin ardından 60 dk hazırlık sonrası dönüş seferi süresiz oluşturulur."
+       :` Otomatik dönüş de plana bağlıdır; ${repeatMode} günün her birinde gidiş seferinin ardından 60 dk hazırlık sonrası dönüş seferi oluşturulur.`;
+ }
+ if($("repeatInfo"))$("repeatInfo").textContent=main+ret;
+}
 function setRepeatMode(n,btn){
  repeatMode=Number(n);
  document.querySelectorAll(".repeatBtn").forEach(x=>x.classList.toggle("active",x===btn));
- let txt=repeatMode===1?"Bu sefer yalnızca bir kez çalışır."
-   :repeatMode===0?"Araç bu seferi her gün aynı saatte süresiz tekrarlar. Sistem gelecekteki seferleri otomatik oluşturur."
-   :`Araç bu seferi ${repeatMode} gün boyunca her gün aynı saatte tekrarlar.`;
- if($("repeatInfo"))$("repeatInfo").textContent=txt;
+ updateRepeatInfo();
 }
 function reverseRouteOf(r){
  let no=routeNo(r),dir=r.dir==="IZ-IST"?"IST-IZ":"IZ-IST";
@@ -553,7 +567,7 @@ function openTrip(){
  repeatMode=1;
  document.querySelectorAll(".repeatBtn").forEach(x=>x.classList.toggle("active",x.dataset.repeat==="1"));
  if($("autoReturn"))$("autoReturn").checked=false;
- if($("repeatInfo"))$("repeatInfo").textContent="Bu sefer yalnızca bir kez çalışır.";
+ updateRepeatInfo();
  let n=new Date(),d=new Date(n.getTime()+60*60000);d.setSeconds(0,0);
  $("tripDate").min=localVal(n).slice(0,10);
  $("tripDate").value=localVal(d).slice(0,10);
@@ -806,7 +820,7 @@ function writeProtectedLocal(payload){
 }
 
 function makeSavePayload(){
- return {version:"0.38",savedAt:Date.now(),cash,income,passengers,fleet,crewData,
+ return {version:"0.39",savedAt:Date.now(),cash,income,passengers,fleet,crewData,
  trips:trips.map(tripToSave),recurringPlans,completedSeen,selectedTrack}
 }
 function applySavePayload(d){
