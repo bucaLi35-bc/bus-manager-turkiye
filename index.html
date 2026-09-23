@@ -269,8 +269,8 @@ function routeNo(r){return r.name.includes("Hat 1")?1:r.name.includes("Hat 2")?2
 function roadCost(r){return routeNo(r)==1?2000:7500}
 let cash=8450000;
 let fleet=[
-{uid:"BUS-001",model:"Temsa Safir Plus",fuel:22,layout:"2+2",cap:50,comfort:1.00,purchase:12000000},
-{uid:"BUS-002",model:"Temsa Maraton",fuel:23,layout:"2+1",cap:41,comfort:1.07,purchase:17000000}
+{uid:"BUS-001",model:"Temsa Safir Plus",fuel:22,layout:"2+2",cap:50,comfort:1.00,purchase:12000000,modelYear:2026},
+{uid:"BUS-002",model:"Temsa Maraton",fuel:23,layout:"2+1",cap:41,comfort:1.07,purchase:17000000,modelYear:2026}
 ];
 const crewData={"Ahmet Yılmaz":{fatigue:22,days:4},"Mehmet Kaya":{fatigue:68,days:6},"Ali Çetin":{fatigue:41,days:2},"Burak Demir":{fatigue:15,days:1},"Ayşe Demir":{fatigue:31,days:3},"Elif Kaya":{fatigue:57,days:5}};let trips=[],recurringPlans=[],income=0,passengers=0,selectedTrack=0;const $=x=>document.getElementById(x),money=x=>Math.round(x).toLocaleString("tr-TR")+" ₺";
 routes.forEach((r,i)=>$("route").add(new Option(r.name,i)));
@@ -298,7 +298,7 @@ function drawMarket(){
 function buyBus(id){
  let x=market.find(a=>a.id==id); if(!x||cash<x.price)return;
  cash-=x.price;let n=String(fleet.length+1).padStart(3,"0");
- fleet.push({uid:"BUS-"+n,model:x.model,fuel:x.fuel,layout:x.layout,cap:x.cap,comfort:x.comfort,purchase:x.price});
+ fleet.push({uid:"BUS-"+n,model:x.model,fuel:x.fuel,layout:x.layout,cap:x.cap,comfort:x.comfort,purchase:x.price,modelYear:2026});
  drawMarket();drawFleet();refreshBusSelect();draw();saveGame()
 }
 function busBusy(uid,dep,end){
@@ -346,6 +346,75 @@ function quotaValid(){
  let b=fleet.find(x=>x.uid==$("bus").value),cap=b?b.cap:0,q=(window.pendingQuota&&$("planStep2")?.classList.contains("show"))?window.pendingQuota:readQuota();
  return Object.values(q).reduce((a,b)=>a+b,0)<=cap
 }
+
+// v0.43 — Temel yolcu talep motoru.
+// Genişletilebilir çekirdek: ileride firma prestiji, ikram vb. katsayılar demandExtraMultipliers() içine eklenecek.
+const BASE_ROUTE_DEMAND=1000;
+const DEMAND_TO_PASSENGERS=.026;
+const SEASON_MULT={winter:.85,spring:1.00,summer:1.30,autumn:1.05};
+const WEEKDAY_MULT=[1.15,.90,.85,.90,1.00,1.25,1.20]; // Pazar..Cumartesi
+const HOLIDAY_MULT={none:1.00,ramazan:1.80,kurban:2.50,semester:1.25,official:1.20};
+const MODEL_COMFORT_MULT={
+ "Travego 16 SHD":1.12,"Tourismo 16 RHD":1.10,"Tourismo 15 RHD":1.08,
+ "Temsa Maraton":1.06,"Temsa Safir Plus":1.04,"MAN Lion’s Coach":1.09
+};
+function seasonKey(d){
+ let m=d.getMonth()+1;
+ return [12,1,2].includes(m)?"winter":[3,4,5].includes(m)?"spring":[6,7,8].includes(m)?"summer":"autumn";
+}
+function hourMultiplier(d){
+ let h=d.getHours();
+ if(h>=6&&h<=8)return .80;
+ if(h>=9&&h<=16)return 1.00;
+ if(h>=17&&h<=20)return 1.30;
+ if(h>=21)return 1.50;
+ return .75; // 00:00–05:59: şimdilik düşük gece talebi; ileride ayrı tabloyla değiştirilebilir.
+}
+function serviceTypeOf(r){return r.name.includes("Hat 3")?"express":"normal"}
+function serviceTypeMultiplier(r){return serviceTypeOf(r)==="express"?1.15:1.00}
+function vehicleAgeMultiplier(bus,dep){
+ let modelYear=Number(bus?.modelYear||2026),age=Math.max(0,dep.getFullYear()-modelYear);
+ if(age<=2)return 1.05;
+ if(age<=5)return 1.00;
+ if(age<=8)return .95;
+ if(age<=12)return .88;
+ return .80;
+}
+function vehicleAttractiveness(bus,dep){
+ let model=Number(MODEL_COMFORT_MULT[bus?.model]||bus?.comfort||1);
+ let layout=bus?.layout==="2+1"?1.10:1.00;
+ let age=vehicleAgeMultiplier(bus,dep);
+ return {model,layout,age,total:model*layout*age};
+}
+function holidayTypeForDate(d){
+ // İlk prototipte otomatik takvim yerine sefer kaydındaki holidayType kullanılabilir.
+ // Veri yoksa 1.00 uygulanır. Resmî/bayram takvimi sonraki katmanda bağlanabilir.
+ return "none";
+}
+function demandExtraMultipliers(t){return {total:1.00};} // firma prestiji, ikram vb. için genişleme noktası
+function calculateDemandProfile(t){
+ let dep=t.dep instanceof Date?t.dep:new Date(t.dep),bus=fleet.find(b=>b.uid===t.busUid)||{};
+ let season=SEASON_MULT[seasonKey(dep)]||1,weekday=WEEKDAY_MULT[dep.getDay()]||1;
+ let holidayType=t.holidayType||holidayTypeForDate(dep),holiday=HOLIDAY_MULT[holidayType]||1;
+ let hour=hourMultiplier(dep),service=serviceTypeMultiplier(t.r),vehicle=vehicleAttractiveness(bus,dep);
+ let extra=demandExtraMultipliers(t);
+ let index=BASE_ROUTE_DEMAND*season*weekday*holiday*hour*service*vehicle.total*extra.total;
+ let potential=Math.max(0,index*DEMAND_TO_PASSENGERS);
+ return {base:BASE_ROUTE_DEMAND,season,weekday,holiday,hour,service,vehicle,extra,index,potential,
+         capacity:Number(t.cap||bus.cap||0),unmet:Math.max(0,potential-Number(t.cap||bus.cap||0))};
+}
+function demandSaleMultiplier(t){
+ let p=calculateDemandProfile(t);
+ // 1000 endeks = 26 potansiyel yolcu referansı. Satış akışının mevcut zaman eğrisine bağlanan göreli çarpan.
+ return Math.max(.20,Math.min(4,p.index/1000));
+}
+function demandWarning(t){
+ let p=calculateDemandProfile(t);
+ if(p.potential>=p.capacity*1.75)return `🔥 Yolcu talebi çok fazla. Bu hatta birden fazla ek sefer açmanız önerilir.`;
+ if(p.potential>p.capacity)return `🔥 Yolcu talebi araç kapasitesini aşıyor. Ek sefer açmanız önerilir.`;
+ return "";
+}
+
 function seedSales(t){
  t.salesByOrigin={};
  t.quotaInitial={...t.quota};
@@ -429,9 +498,9 @@ function updateDynamicSales(t,now){
    let minsTo=Math.max(1,(stopTime-tickTime)/60000);
    // Gerçekçi akış: uzak zamanda yavaş, kalkış yaklaştıkça hızlanan talep.
    let baseChance=minsTo>720?.006:minsTo>360?.012:minsTo>180?.022:minsTo>60?.040:.065;
-   let routeDemand=t.r.name.includes("Hat 3")?1.18:t.r.name.includes("Hat 2")?1.08:1.0;
+   let demandBoost=demandSaleMultiplier(t);
    let discountBoost=t.discounts?.[name]?1.18:1;
-   let chance=Math.min(.18,baseChance*routeDemand*discountBoost);
+   let chance=Math.min(.32,baseChance*demandBoost*discountBoost);
 
    let tripSeed=Math.floor(new Date(t.dep).getTime()/60000);
    let seed=(seedBase+minute)*12.9898+(i+1)*78.233+tripSeed*.013;
@@ -773,6 +842,8 @@ function createTrip(){
   fee:terminalFee,terminalFee,km,fuelRate:busObj.fuel,fuelLiters,fuelCost,highway,catering,totalExpense,quota,
   crew:[c1,c2,cb],fatiguePct,wearPenalty,satisfaction});
  let nt=trips[trips.length-1];
+ nt.demandProfile=calculateDemandProfile(nt);
+ nt.demandWarning=demandWarning(nt);
  if(window.useEditedQuotaFares){
  nt.quota={...window.pendingQuota};
  nt.customFares={...window.pendingFares};
@@ -823,6 +894,8 @@ function draw(){
   👨‍✈️ ${t.crew[0]} + ${t.crew[1]} • 👩‍💼 ${t.crew[2]} • Memnuniyet %${t.satisfaction}</div>
   <div class="tcPassenger" style="margin-top:9px">${tripPassengerText(t,now)}</div>
   <div style="margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:8px">
+   <b>Talep Motoru</b><br>
+   ${(()=>{let dp=calculateDemandProfile(t),w=demandWarning(t);return `Talep endeksi: <b>${Math.round(dp.index)}</b> • Potansiyel yolcu: <b>${Math.round(dp.potential)}</b> / ${t.cap}${w?`<br><span class="bad">${w}</span>`:""}`})()}<br><br>
    <b>Sefer Finansmanı</b><br>
    <span class="mut">Mesafe:</span> ${t.km} km • <span class="mut">Motorin:</span> ${DIESEL_PRICE.toLocaleString("tr-TR",{minimumFractionDigits:2})} TL/L<br>
    Yakıt: <b>${t.fuelLiters.toFixed(1)} L / ${money(t.fuelCost)}</b> • Kaptan yorgunluk etkisi +%${(t.fatiguePct*100).toFixed(1)}<br>
@@ -933,7 +1006,7 @@ function writeProtectedLocal(payload){
 }
 
 function makeSavePayload(){
- return {version:"0.42",savedAt:Date.now(),cash,income,passengers,fleet,crewData,
+ return {version:"0.43",savedAt:Date.now(),cash,income,passengers,fleet,crewData,
  trips:trips.map(tripToSave),recurringPlans,completedSeen,selectedTrack}
 }
 function applySavePayload(d){
