@@ -213,6 +213,14 @@ input[type="date"],#tripHour,#tripMinute{cursor:pointer}
  <h3>Durak Biniş Kontenjanları</h3><div id="quotaEditor" class="quotaGrid"></div>
  <h3 style="margin-top:16px">Duraklar Arası Bilet Fiyatları</h3>
  <div id="fareEditor" class="fareGrid"></div>
+ <div id="returnPlanEditor" style="display:none;margin-top:20px;border-top:1px solid #29404f;padding-top:16px">
+  <div class="sectionTitle">DÖNÜŞ SEFERİ • KONTENJAN, FİYAT VE SAAT</div>
+  <div id="returnRouteInfo" class="mut"></div>
+  <div style="max-width:320px;margin:12px 0"><label>Dönüş Kalkış Saati</label><input id="returnTime" type="time" oninput="updateReturnTimeInfo()"><div id="returnTimeInfo" class="mut"></div></div>
+  <h3>Dönüş Durak Biniş Kontenjanları</h3><div id="returnQuotaEditor" class="quotaGrid"></div>
+  <div id="returnQuotaCapacitySummary" class="planSummary"></div>
+  <h3 style="margin-top:16px">Dönüş Duraklar Arası Bilet Fiyatları</h3><div id="returnFareEditor" class="fareGrid"></div>
+ </div>
  <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
    <button type="button" onclick="backFromQuotaFare()">← Geri</button>
    <button type="button" class="primary" onclick="createTripFromStep2()">Seferi Planla</button>
@@ -549,11 +557,16 @@ function materializeRecurringPlans(){
      if(p.autoReturn){
        let out=trips.find(t=>t.seriesKey===key);if(!out)continue;
        let rr=reverseRouteOf(out.r);if(!rr)continue;
-       let rdep=new Date(out.end.getTime()+60*60000),rkey=p.id+"-RET-"+d;
-       if(!trips.some(t=>t.seriesKey===rkey)){
+       let rdep=returnDepartureFor(out.dep,out.end,p.returnTime),rkey=p.id+"-RET-"+d;
+       if(rdep&&!trips.some(t=>t.seriesKey===rkey)){
          let rss=selectedStopsForRoute(out,rr),base={busUid:p.busUid,crew:p.crew,ss:rss};
          let rt=cloneScheduledTrip(base,rr,rdep,rss,p.id,"return");
-         if(rt&&!busConflictInfo(p.busUid,rt.dep,rt.end)){rt.seriesKey=rkey;rt.prepMinutes=60;trips.push(rt);changed=true}
+         if(rt&&!busConflictInfo(p.busUid,rt.dep,rt.end)){
+          rt.seriesKey=rkey;rt.prepMinutes=60;
+          if(p.returnQuota)rt.quota={...p.returnQuota};
+          if(p.returnFares)rt.customFares={...p.returnFares};
+          rt.quotaInitial={...rt.quota};trips.push(rt);changed=true
+         }
        }
      }
    }
@@ -608,6 +621,42 @@ const STEP2_FARES={
 };
 function selectedRouteForEditor(){return routes[+$("route").value]}
 function selectedBusForEditor(){return fleet.find(b=>b.uid===$("bus").value)}
+
+function returnDepartureFor(outDep,outEnd,timeStr){
+ if(!timeStr)return null;
+ let [h,m]=timeStr.split(":").map(Number),d=new Date(outDep);
+ d.setHours(h,m,0,0);
+ let earliest=new Date(outEnd.getTime()+60*60000);
+ while(d<earliest)d.setDate(d.getDate()+1);
+ return d;
+}
+function updateReturnTimeInfo(){
+ let r=selectedRouteForEditor(),out=dt(),el=$("returnTimeInfo");if(!r||!out||!el)return;
+ let end=new Date(out.getTime()+mins(r.st.at(-1)[0])*60000);
+ let rd=returnDepartureFor(out,end,$("returnTime")?.value);
+ el.innerHTML=rd?`Dönüş kalkışı: <b>${rd.toLocaleString("tr-TR",{dateStyle:"short",timeStyle:"short"})}</b>`:"Dönüş saatini seç.";
+}
+function updateReturnQuotaSummary(){
+ let b=selectedBusForEditor(),sum=Object.values(window.pendingReturnQuota||{}).reduce((a,x)=>a+(+x||0),0),left=(b?.cap||0)-sum;
+ $("returnQuotaCapacitySummary").innerHTML=`Araç kapasitesi: <b>${b?.cap||0}</b> • Dağıtılan: <b>${sum}</b> • <span class="${left<0?"bad":"good"}">${left<0?"Kapasite aşımı":"Kalan"}: <b>${Math.abs(left)}</b></span>`;
+}
+function buildReturnEditor(r,bus,outDep){
+ let wrap=$("returnPlanEditor");
+ if(!$("autoReturn")?.checked){wrap.style.display="none";return}
+ let rr=reverseRouteOf(r);if(!rr){wrap.style.display="none";return}
+ wrap.style.display="block";
+ let outEnd=new Date(outDep.getTime()+mins(r.st.at(-1)[0])*60000),earliest=new Date(outEnd.getTime()+60*60000);
+ $("returnTime").value=String(earliest.getHours()).padStart(2,"0")+":"+String(earliest.getMinutes()).padStart(2,"0");
+ $("returnRouteInfo").innerHTML=`<b>${rr.name}</b> • Gidiş varışı ${outEnd.toLocaleString("tr-TR",{dateStyle:"short",timeStyle:"short"})} • Araç en erken <b>${earliest.toLocaleString("tr-TR",{dateStyle:"short",timeStyle:"short"})}</b> hazır. Dönüş saatini sen belirleyebilirsin.`;
+ window.pendingReturnQuota=defaultQuota(rr,bus.cap);window.pendingReturnFares={};
+ let bs=boardingStopsFor(rr),ps=rr.st.filter(x=>x[3]!="rest");
+ $("returnQuotaEditor").innerHTML=bs.map(st=>`<div class="quotaBox"><b>${st[1]}</b><small class="mut"> Biniş kontenjanı</small><input type="number" min="0" max="${bus.cap}" value="${pendingReturnQuota[st[1]]}" data-rstop="${st[1]}" oninput="pendingReturnQuota[this.dataset.rstop]=Math.max(0,+this.value||0);updateReturnQuotaSummary()"></div>`).join("");
+ let pairs=[];bs.forEach(a=>ps.forEach(b=>{let ia=rr.st.indexOf(a),ib=rr.st.indexOf(b),k=a[1]+"|"+b[1];if(ib>ia&&can(rr,a[1],b[1])&&STEP2_FARES[k]!=null)pairs.push([a[1],b[1],STEP2_FARES[k]])}));
+ pairs.forEach(([a,b,p])=>pendingReturnFares[a+"|"+b]=p);
+ $("returnFareEditor").innerHTML=pairs.map(([a,b,p])=>`<div class="fareBox"><small>${a} → ${b}</small><input type="number" min="0" step="5" value="${p}" data-rfare="${a}|${b}" oninput="pendingReturnFares[this.dataset.rfare]=Math.max(0,+this.value||0)"><div class="mut">Temel fiyat: ${money(p)}</div></div>`).join("");
+ updateReturnQuotaSummary();updateReturnTimeInfo();
+}
+
 function openQuotaFareStep(){
  let r=selectedRouteForEditor(),bus=selectedBusForEditor();
  if(!r||!bus)return alert("Önce rota ve araç seçmelisin.");
@@ -623,7 +672,7 @@ function openQuotaFareStep(){
  let box=$("modal").querySelector(".box");
  [...box.children].forEach(el=>{if(el!==$("planStep2")){el.dataset.step1Hidden="1";el.style.display="none"}});
  $("planStep2").classList.add("show");$("planStep2").style.display="block";
- updateQuotaSummary2();box.scrollTop=0;
+ updateQuotaSummary2();buildReturnEditor(r,bus,dt());box.scrollTop=0;
 }
 function updateQuotaSummary2(){
  let bus=selectedBusForEditor(),sum=Object.values(pendingQuota||{}).reduce((a,b)=>a+(+b||0),0),left=(bus?.cap||0)-sum;
@@ -640,6 +689,12 @@ function createTripFromStep2(){
  if(!bus)return alert("Araç seçimi bulunamadı.");
  if(sum>bus.cap)return alert(`Toplam kontenjan ${sum}; araç kapasitesi ${bus.cap}. Kontenjanı azaltmalısın.`);
  if(sum===0)return alert("En az bir durağa kontenjan vermelisin.");
+ if($("autoReturn")?.checked){
+  let rs=Object.values(window.pendingReturnQuota||{}).reduce((a,b)=>a+(+b||0),0);
+  if(rs>bus.cap)return alert("Dönüş kontenjanı araç kapasitesini aşıyor.");
+  if(rs===0)return alert("Dönüş seferinde en az bir durağa kontenjan vermelisin.");
+  if(!$("returnTime")?.value)return alert("Dönüş kalkış saatini seçmelisin.");
+ }
  window.useEditedQuotaFares=true;
  createTrip();
  window.useEditedQuotaFares=false;
@@ -681,7 +736,11 @@ nt.events=[]; seedSales(nt);
    recurringPlans.push({
      id:seriesId,active:true,start:dep.toISOString(),days:selectedRepeat,
      routeName:r.name,busUid:busObj.uid,crew:[c1,c2,cb],
-     ss:ss.map(x=>[...x]),autoReturn:autoRet,createdAt:Date.now()
+     ss:ss.map(x=>[...x]),autoReturn:autoRet,
+     returnTime:autoRet?$("returnTime").value:null,
+     returnQuota:autoRet?{...(window.pendingReturnQuota||{})}:null,
+     returnFares:autoRet?{...(window.pendingReturnFares||{})}:null,
+     createdAt:Date.now()
    });
    materializeRecurringPlans();
  }
@@ -820,7 +879,7 @@ function writeProtectedLocal(payload){
 }
 
 function makeSavePayload(){
- return {version:"0.39",savedAt:Date.now(),cash,income,passengers,fleet,crewData,
+ return {version:"0.40",savedAt:Date.now(),cash,income,passengers,fleet,crewData,
  trips:trips.map(tripToSave),recurringPlans,completedSeen,selectedTrack}
 }
 function applySavePayload(d){
