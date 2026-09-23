@@ -213,17 +213,29 @@ input[type="date"],#tripHour,#tripMinute{cursor:pointer}
  <h3>Durak Biniş Kontenjanları</h3><div id="quotaEditor" class="quotaGrid"></div>
  <h3 style="margin-top:16px">Duraklar Arası Bilet Fiyatları</h3>
  <div id="fareEditor" class="fareGrid"></div>
- <div id="returnPlanEditor" style="display:none;margin-top:20px;border-top:1px solid #29404f;padding-top:16px">
-  <div class="sectionTitle">DÖNÜŞ SEFERİ • KONTENJAN, FİYAT VE SAAT</div>
-  <div id="returnRouteInfo" class="mut"></div>
-  <div style="max-width:320px;margin:12px 0"><label>Dönüş Kalkış Saati</label><input id="returnTime" type="time" oninput="updateReturnTimeInfo()"><div id="returnTimeInfo" class="mut"></div></div>
+ <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
+   <button type="button" onclick="backFromQuotaFare()">← Geri</button>
+   <button type="button" class="primary" onclick="continueFromOutboundStep()">Devam Et →</button>
+ </div>
+</div>
+<div id="planStep3" class="planStep2">
+ <div class="sectionTitle">3. ADIM • DÖNÜŞ SEFERİ PLANLAMASI</div>
+ <div class="mut">Dönüş kalkış saatini, biniş kontenjanlarını ve dönüş yönündeki bilet fiyatlarını ayrı olarak düzenle.</div>
+ <div id="returnPlanEditor" style="display:block;margin-top:16px">
+  <div style="max-width:520px;margin:12px 0">
+   <label>Dönüş Hattı</label>
+   <select id="returnRoute" onchange="changeReturnRoute()"></select>
+   <div class="mut" style="margin-top:5px">Dönüşte Hat 1, Hat 2 veya Hat 3 Express'i gidişten bağımsız seçebilirsin.</div>
+  </div>
+  <div id="returnRouteInfo" class="planSummary"></div>
+  <div style="max-width:340px;margin:12px 0"><label>Dönüş Kalkış Saati</label><input id="returnTime" type="time" oninput="updateReturnTimeInfo()"><div id="returnTimeInfo" class="mut" style="margin-top:6px"></div></div>
   <h3>Dönüş Durak Biniş Kontenjanları</h3><div id="returnQuotaEditor" class="quotaGrid"></div>
   <div id="returnQuotaCapacitySummary" class="planSummary"></div>
   <h3 style="margin-top:16px">Dönüş Duraklar Arası Bilet Fiyatları</h3><div id="returnFareEditor" class="fareGrid"></div>
  </div>
  <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
-   <button type="button" onclick="backFromQuotaFare()">← Geri</button>
-   <button type="button" class="primary" onclick="createTripFromStep2()">Seferi Planla</button>
+  <button type="button" onclick="backToOutboundStep()">← Gidiş Ayarları</button>
+  <button type="button" class="primary" onclick="createTripFromStep2()">Gidiş + Dönüşü Planla</button>
  </div>
 </div>
 </div></div>
@@ -556,7 +568,7 @@ function materializeRecurringPlans(){
      }
      if(p.autoReturn){
        let out=trips.find(t=>t.seriesKey===key);if(!out)continue;
-       let rr=reverseRouteOf(out.r);if(!rr)continue;
+       let rr=routes.find(x=>x.name===p.returnRouteName)||reverseRouteOf(out.r);if(!rr)continue;
        let rdep=returnDepartureFor(out.dep,out.end,p.returnTime),rkey=p.id+"-RET-"+d;
        if(rdep&&!trips.some(t=>t.seriesKey===rkey)){
          let rss=selectedStopsForRoute(out,rr),base={busUid:p.busUid,crew:p.crew,ss:rss};
@@ -622,6 +634,28 @@ const STEP2_FARES={
 function selectedRouteForEditor(){return routes[+$("route").value]}
 function selectedBusForEditor(){return fleet.find(b=>b.uid===$("bus").value)}
 
+
+function returnRouteOptionsFor(outRoute){
+ return routes.filter(x=>x.dir!==outRoute.dir);
+}
+function selectedReturnRoute(){
+ let name=$("returnRoute")?.value;
+ return routes.find(x=>x.name===name)||null;
+}
+function fillReturnRouteOptions(outRoute){
+ let sel=$("returnRoute");if(!sel)return null;
+ let opts=returnRouteOptionsFor(outRoute);
+ let preferred=reverseRouteOf(outRoute);
+ sel.innerHTML=opts.map(x=>`<option value="${x.name}">${x.name}</option>`).join("");
+ if(preferred)sel.value=preferred.name;
+ return selectedReturnRoute();
+}
+function changeReturnRoute(){
+ let r=selectedRouteForEditor(),bus=selectedBusForEditor(),out=dt();
+ if(!r||!bus||!out)return;
+ buildReturnEditor(r,bus,out,true);
+}
+
 function returnDepartureFor(outDep,outEnd,timeStr){
  if(!timeStr)return null;
  let [h,m]=timeStr.split(":").map(Number),d=new Date(outDep);
@@ -640,14 +674,16 @@ function updateReturnQuotaSummary(){
  let b=selectedBusForEditor(),sum=Object.values(window.pendingReturnQuota||{}).reduce((a,x)=>a+(+x||0),0),left=(b?.cap||0)-sum;
  $("returnQuotaCapacitySummary").innerHTML=`Araç kapasitesi: <b>${b?.cap||0}</b> • Dağıtılan: <b>${sum}</b> • <span class="${left<0?"bad":"good"}">${left<0?"Kapasite aşımı":"Kalan"}: <b>${Math.abs(left)}</b></span>`;
 }
-function buildReturnEditor(r,bus,outDep){
+function buildReturnEditor(r,bus,outDep,keepSelection=false){
  let wrap=$("returnPlanEditor");
- if(!$("autoReturn")?.checked){wrap.style.display="none";return}
- let rr=reverseRouteOf(r);if(!rr){wrap.style.display="none";return}
+ let rr;
+ if(!keepSelection||!$("returnRoute")?.options.length)rr=fillReturnRouteOptions(r);
+ else rr=selectedReturnRoute();
+ if(!rr)return;
  wrap.style.display="block";
  let outEnd=new Date(outDep.getTime()+mins(r.st.at(-1)[0])*60000),earliest=new Date(outEnd.getTime()+60*60000);
- $("returnTime").value=String(earliest.getHours()).padStart(2,"0")+":"+String(earliest.getMinutes()).padStart(2,"0");
- $("returnRouteInfo").innerHTML=`<b>${rr.name}</b> • Gidiş varışı ${outEnd.toLocaleString("tr-TR",{dateStyle:"short",timeStyle:"short"})} • Araç en erken <b>${earliest.toLocaleString("tr-TR",{dateStyle:"short",timeStyle:"short"})}</b> hazır. Dönüş saatini sen belirleyebilirsin.`;
+ if(!keepSelection||!$("returnTime").value)$("returnTime").value=String(earliest.getHours()).padStart(2,"0")+":"+String(earliest.getMinutes()).padStart(2,"0");
+ $("returnRouteInfo").innerHTML=`<b>${rr.name}</b> • Gidiş varışı ${outEnd.toLocaleString("tr-TR",{dateStyle:"short",timeStyle:"short"})} • Araç en erken <b>${earliest.toLocaleString("tr-TR",{dateStyle:"short",timeStyle:"short"})}</b> hazır.<br>Dönüş rotası: ${rr.st.filter(x=>x[3]!=="rest").map(x=>x[1]).join(" → ")}`;
  window.pendingReturnQuota=defaultQuota(rr,bus.cap);window.pendingReturnFares={};
  let bs=boardingStopsFor(rr),ps=rr.st.filter(x=>x[3]!="rest");
  $("returnQuotaEditor").innerHTML=bs.map(st=>`<div class="quotaBox"><b>${st[1]}</b><small class="mut"> Biniş kontenjanı</small><input type="number" min="0" max="${bus.cap}" value="${pendingReturnQuota[st[1]]}" data-rstop="${st[1]}" oninput="pendingReturnQuota[this.dataset.rstop]=Math.max(0,+this.value||0);updateReturnQuotaSummary()"></div>`).join("");
@@ -672,7 +708,7 @@ function openQuotaFareStep(){
  let box=$("modal").querySelector(".box");
  [...box.children].forEach(el=>{if(el!==$("planStep2")){el.dataset.step1Hidden="1";el.style.display="none"}});
  $("planStep2").classList.add("show");$("planStep2").style.display="block";
- updateQuotaSummary2();buildReturnEditor(r,bus,dt());box.scrollTop=0;
+ updateQuotaSummary2();box.scrollTop=0;
 }
 function updateQuotaSummary2(){
  let bus=selectedBusForEditor(),sum=Object.values(pendingQuota||{}).reduce((a,b)=>a+(+b||0),0),left=(bus?.cap||0)-sum;
@@ -681,9 +717,26 @@ function updateQuotaSummary2(){
 function backFromQuotaFare(){
  let box=$("modal").querySelector(".box");
  $("planStep2").classList.remove("show");$("planStep2").style.display="none";
+ if($("planStep3")){ $("planStep3").classList.remove("show");$("planStep3").style.display="none"; }
  [...box.children].forEach(el=>{if(el.dataset.step1Hidden){el.style.display="";delete el.dataset.step1Hidden}});
 }
 
+function continueFromOutboundStep(){
+ let bus=selectedBusForEditor(),sum=Object.values(window.pendingQuota||{}).reduce((a,b)=>a+(+b||0),0);
+ if(!bus)return alert("Araç seçimi bulunamadı.");
+ if(sum>bus.cap)return alert(`Toplam kontenjan ${sum}; araç kapasitesi ${bus.cap}. Kontenjanı azaltmalısın.`);
+ if(sum===0)return alert("En az bir durağa kontenjan vermelisin.");
+ if(!$("autoReturn")?.checked){window.useEditedQuotaFares=true;createTrip();window.useEditedQuotaFares=false;return}
+ let r=selectedRouteForEditor(),box=$("modal").querySelector(".box");
+ $("planStep2").style.display="none";$("planStep2").classList.remove("show");
+ $("planStep3").style.display="block";$("planStep3").classList.add("show");
+ buildReturnEditor(r,bus,dt());box.scrollTop=0;
+}
+function backToOutboundStep(){
+ let box=$("modal").querySelector(".box");
+ $("planStep3").style.display="none";$("planStep3").classList.remove("show");
+ $("planStep2").style.display="block";$("planStep2").classList.add("show");box.scrollTop=0;
+}
 function createTripFromStep2(){
  let bus=selectedBusForEditor(),sum=Object.values(window.pendingQuota||{}).reduce((a,b)=>a+(+b||0),0);
  if(!bus)return alert("Araç seçimi bulunamadı.");
@@ -737,6 +790,7 @@ nt.events=[]; seedSales(nt);
      id:seriesId,active:true,start:dep.toISOString(),days:selectedRepeat,
      routeName:r.name,busUid:busObj.uid,crew:[c1,c2,cb],
      ss:ss.map(x=>[...x]),autoReturn:autoRet,
+     returnRouteName:autoRet?(selectedReturnRoute()?.name||reverseRouteOf(r)?.name):null,
      returnTime:autoRet?$("returnTime").value:null,
      returnQuota:autoRet?{...(window.pendingReturnQuota||{})}:null,
      returnFares:autoRet?{...(window.pendingReturnFares||{})}:null,
@@ -879,7 +933,7 @@ function writeProtectedLocal(payload){
 }
 
 function makeSavePayload(){
- return {version:"0.40",savedAt:Date.now(),cash,income,passengers,fleet,crewData,
+ return {version:"0.42",savedAt:Date.now(),cash,income,passengers,fleet,crewData,
  trips:trips.map(tripToSave),recurringPlans,completedSeen,selectedTrack}
 }
 function applySavePayload(d){
